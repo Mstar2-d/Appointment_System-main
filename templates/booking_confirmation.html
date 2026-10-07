@@ -1,0 +1,66 @@
+{% extends "base.html" %}
+
+{% block title %}Appointment Request Submitted{% endblock %}
+
+{% block content %}
+<div class="auth-container" style="max-width: 620px;">
+    <div class="auth-card" style="border-top-color: var(--gold);">
+        <div style="width: 72px; height: 72px; margin: 0 auto 1.5rem; border-radius: 50%; background: var(--success-bg); display: flex; align-items: center; justify-content: center;">
+            <svg aria-hidden="true" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" width="36" height="36" fill="none" stroke="var(--success)" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
+                <polyline points="20 6 9 17 4 12"></polyline>
+            </svg>
+        </div>
+        <h2 style="text-align: center;">Appointment Request Submitted!</h2>
+        <p style="text-align: center; margin-bottom: 2rem; color: var(--text-secondary);">
+            Thank you, <strong style="color: var(--text-primary);">{{ appointment.display_name }}</strong>. Your appointment with <strong style="color: var(--accent);">{{ appointment.counselor.full_name }}</strong> is waiting for approval.
+        </p>
+
+        <div class="card" style="margin-bottom: 1.5rem; padding: 1.5rem; border-radius: var(--radius-md);">
+            <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 1rem 1.5rem;">
+                <div>
+                    <div style="font-size: 0.78rem; color: var(--text-tertiary); text-transform: uppercase; letter-spacing: 0.04em; margin-bottom: 0.25rem;">Date</div>
+                    <div style="font-weight: 600; color: var(--text-primary);">{{ weekday_names[appointment.date.weekday()] }}, {{ appointment.date|fmt_long }}</div>
+                </div>
+                <div>
+                    <div style="font-size: 0.78rem; color: var(--text-tertiary); text-transform: uppercase; letter-spacing: 0.04em; margin-bottom: 0.25rem;">Time</div>
+                    <div style="font-weight: 600; color: var(--text-primary);">{{ appointment.time_str }}</div>
+                </div>
+                <div>
+                    <div style="font-size: 0.78rem; color: var(--text-tertiary); text-transform: uppercase; letter-spacing: 0.04em; margin-bottom: 0.25rem;">Counselor</div>
+                    <div style="font-weight: 600; color: var(--text-primary);">{{ appointment.counselor.full_name }}</div>
+                </div>
+                <div>
+                    <div style="font-size: 0.78rem; color: var(--text-tertiary); text-transform: uppercase; letter-spacing: 0.04em; margin-bottom: 0.25rem;">Status</div>
+                    <div>
+                        <span class="badge badge-pending">Pending Approval</span>
+                    </div>
+                </div>
+                {% if appointment.year_level or appointment.section %}
+                    <div style="grid-column: 1 / -1;">
+                        <div style="font-size: 0.78rem; color: var(--text-tertiary); text-transform: uppercase; letter-spacing: 0.04em; margin-bottom: 0.25rem;">Year & Section</div>
+                        <div style="font-weight: 500; color: var(--text-primary);">
+                            {% if appointment.year_level %}{{ appointment.year_level }}{% endif %}{% if appointment.year_level and appointment.section %} · {% endif %}{% if appointment.section %}{{ appointment.section }}{% endif %}
+                        </div>
+                    </div>
+                {% endif %}
+                <div style="grid-column: 1 / -1;">
+                    <div style="font-size: 0.78rem; color: var(--text-tertiary); text-transform: uppercase; letter-spacing: 0.04em; margin-bottom: 0.25rem;">Reference #</div>
+                    <div style="font-family: 'Inter', monospace; font-weight: 600; color: var(--accent); font-size: 0.95rem;">APT-{{ '%06d'|format(appointment.id) }}</div>
+                </div>
+            </div>
+        </div>
+
+        <div class="info-box" style="margin-bottom: 1.75rem;">
+            <strong>What happens next?</strong>
+            <p>1. Your counselor will review your request and approve or suggest a different time.<br>
+               2. Save your <strong>Reference #APT-{{ '%06d'|format(appointment.id) }}</strong>.<br>
+               3. If you provided an email or phone, we will send you status updates.</p>
+        </div>
+
+        <div style="display: flex; gap: 0.75rem; flex-wrap: wrap;">
+            <a href="{{ url_for('index') }}" class="btn btn-primary" style="flex: 1; min-width: 180px; justify-content: center;">Back to Home</a>
+            <a href="{{ url_for('book_appointment_public', counselor_id=appointment.counselor_id) }}" class="btn btn-secondary" style="flex: 1; min-width: 180px; justify-content: center;">Book Another</a>
+        </div>
+    </div>
+</div>
+{% endblock %}

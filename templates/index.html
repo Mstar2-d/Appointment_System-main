@@ -10,13 +10,13 @@
         <span>·</span>
     </div>
     <h2>Your well-being starts with a conversation.</h2>
-    <p>Book appointments with our professional counselors. Take the first step toward clarity, growth, and mental wellness — on your schedule.</p>
-    {% if not current_user.is_authenticated %}
-        <a href="{{ url_for('register') }}" class="btn btn-primary" style="font-size: 1rem; padding: 1rem 2.25rem;">Get Started</a>
+    <p>Book a one-time appointment with our professional counselors. No signup needed — just fill in your details and choose a time that works for you.</p>
+    {% if counselors %}
+        <a href="#counselors" class="btn btn-primary" style="font-size: 1rem; padding: 1rem 2.25rem;">Book an Appointment</a>
     {% endif %}
 </div>
 
-<div class="card">
+<div class="card" id="counselors">
     <div class="section-label">Our Counselors</div>
     <h2 style="border: none; padding: 0; margin-bottom: 0.5rem; font-size: 2.1rem;">Meet the people ready to listen.</h2>
     <p style="color: var(--text-secondary); margin-bottom: 2rem; max-width: 600px;">
@@ -37,15 +37,7 @@
                     {% if counselor.phone %}
                         <p style="color: var(--text-secondary); font-size: 0.88rem;">{{ counselor.phone }}</p>
                     {% endif %}
-                    {% if current_user.is_authenticated and current_user.is_student %}
-                        {% if can_book %}
-                            <a href="{{ url_for('book_appointment', counselor_id=counselor.id) }}" class="btn btn-primary" style="margin-top: 1.25rem; width: 100%;">Book Appointment</a>
-                        {% else %}
-                            <div class="limit-badge">
-                                You have an active appointment
-                            </div>
-                        {% endif %}
-                    {% endif %}
+                    <a href="{{ url_for('book_appointment_public', counselor_id=counselor.id) }}" class="btn btn-primary" style="margin-top: 1.25rem; width: 100%;">Book Appointment</a>
                 </div>
             {% endfor %}
         </div>

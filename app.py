@@ -246,7 +246,7 @@ class BlockedTime(db.Model):
 class Appointment(db.Model):
     id = db.Column(db.Integer, primary_key=True)
     counselor_id = db.Column(db.Integer, db.ForeignKey('user.id'), nullable=False)
-    student_id = db.Column(db.Integer, db.ForeignKey('user.id'), nullable=False)
+    student_id = db.Column(db.Integer, db.ForeignKey('user.id'), nullable=True)
     date = db.Column(db.Date, nullable=False)
     start_time = db.Column(db.Time, nullable=False)
     end_time = db.Column(db.Time, nullable=False)
@@ -254,6 +254,18 @@ class Appointment(db.Model):
     status = db.Column(db.String(20), default='pending')
     notes = db.Column(db.Text)
     created_at = db.Column(db.DateTime, default=datetime.utcnow)
+
+    first_name = db.Column(db.String(80))
+    middle_name = db.Column(db.String(80))
+    last_name = db.Column(db.String(80))
+    birthday = db.Column(db.Date)
+    section = db.Column(db.String(50))
+    year_level = db.Column(db.String(50))
+    mood_rating = db.Column(db.String(20))
+    mood_description = db.Column(db.String(200))
+    contact_email = db.Column(db.String(120))
+    contact_phone = db.Column(db.String(20))
+    is_guest = db.Column(db.Boolean, default=False)
 
     student = db.relationship('User', foreign_keys=[student_id], backref=db.backref('student_appointments', lazy=True))
     counselor = db.relationship('User', foreign_keys=[counselor_id], backref=db.backref('counselor_appointments', lazy=True))
@@ -263,6 +275,17 @@ class Appointment(db.Model):
     @property
     def time_str(self):
         return f"{self.start_time.strftime('%H:%M')} - {self.end_time.strftime('%H:%M')}"
+
+    @property
+    def guest_full_name(self):
+        parts = [p for p in [self.first_name, self.middle_name, self.last_name] if p]
+        return ' '.join(parts) if parts else None
+
+    @property
+    def display_name(self):
+        if self.is_guest:
+            return self.guest_full_name or 'Guest Student'
+        return self.student.full_name if self.student else 'Unknown'
 
 
 def times_overlap(s1_start, s1_end, s2_start, s2_end):
@@ -327,6 +350,28 @@ def load_user(user_id):
     return User.query.get(int(user_id))
 
 
+def fmt_date_long(value):
+    if value is None:
+        return ''
+    try:
+        return value.strftime('%B') + ' ' + str(value.day) + ', ' + str(value.year)
+    except Exception:
+        return str(value)
+
+
+def fmt_date_short(value):
+    if value is None:
+        return ''
+    try:
+        return value.strftime('%b') + ' ' + str(value.day)
+    except Exception:
+        return str(value)
+
+
+app.jinja_env.filters['fmt_long'] = fmt_date_long
+app.jinja_env.filters['fmt_short'] = fmt_date_short
+
+
 @app.route('/')
 def index():
     if current_user.is_authenticated:
@@ -335,10 +380,7 @@ def index():
         else:
             return redirect(url_for('student_dashboard'))
     counselors = User.query.filter_by(role='counselor').all()
-    can_book = True
-    if current_user.is_authenticated and current_user.is_student:
-        can_book = not student_has_active_appointment(current_user.id)
-    return render_template('index.html', counselors=counselors, can_book=can_book)
+    return render_template('index.html', counselors=counselors)
 
 
 @app.route('/toggle-counselor-access', methods=['POST'])
@@ -731,8 +773,262 @@ def book_appointment(counselor_id):
                            default_end=DEFAULT_WORK_END.strftime('%H:%M'))
 
 
+MOOD_OPTIONS = [
+    ('excellent', '😊 Excellent – I feel great!'),
+    ('good', '🙂 Good – doing pretty well'),
+    ('okay', '😐 Okay – just so-so'),
+    ('low', '😔 Low – feeling a bit down'),
+    ('difficult', '😟 Difficult – struggling right now'),
+    ('critical', '😢 Critical – I really need help'),
+]
+
+FEELING_OPTIONS = [
+    ('stressed', 'Stressed or anxious about studies'),
+    ('sad', 'Sad or depressed'),
+    ('lonely', 'Lonely or isolated'),
+    ('angry', 'Angry or frustrated'),
+    ('family', 'Family or home issues'),
+    ('friends', 'Friendship or relationship problems'),
+    ('bullying', 'Bullying or harassment concerns'),
+    ('academic', 'Academic pressure / failing grades'),
+    ('sleep', 'Sleep problems'),
+    ('self_esteem', 'Self-esteem / confidence issues'),
+    ('career', 'Career or future uncertainty'),
+    ('other', 'Something else (please describe)'),
+]
+
+
+def guest_has_active_appointment_hash(first_name, last_name, birthday_str):
+    if not birthday_str:
+        return False
+    try:
+        bd = datetime.strptime(birthday_str, '%Y-%m-%d').date()
+    except Exception:
+        return False
+    return Appointment.query.filter(
+        Appointment.is_guest == True,
+        Appointment.first_name == first_name.strip() if first_name else None,
+        Appointment.last_name == last_name.strip() if last_name else None,
+        Appointment.birthday == bd,
+        Appointment.status.in_(['pending', 'approved'])
+    ).first() is not None
+
+
+@app.route('/counselor/<int:counselor_id>/walkin', methods=['GET', 'POST'])
+def book_appointment_public(counselor_id):
+    counselor = User.query.get_or_404(counselor_id)
+    if not counselor.is_counselor:
+        abort(404)
+
+    today = datetime.now().date()
+
+    selected_date = request.args.get('date')
+    if selected_date:
+        try:
+            selected_date = datetime.strptime(selected_date, '%Y-%m-%d').date()
+        except ValueError:
+            selected_date = None
+    if not selected_date:
+        selected_date = today
+
+    if not is_weekday(selected_date) or selected_date < today:
+        target = selected_date if selected_date >= today else today
+        normalized = next_weekday(target, allow_today=(selected_date >= today and is_weekday(selected_date)))
+        if normalized != selected_date:
+            return redirect(url_for('book_appointment_public', counselor_id=counselor_id, date=normalized.strftime('%Y-%m-%d')))
+        selected_date = normalized
+
+    view_month = None
+    raw_month = request.args.get('month')
+    if raw_month:
+        try:
+            yr, mo = raw_month.split('-')
+            view_month = date(int(yr), int(mo), 1)
+        except Exception:
+            view_month = None
+    if not view_month:
+        view_month = selected_date.replace(day=1)
+
+    available_slots = generate_available_slots(counselor_id, selected_date)
+
+    if request.method == 'POST':
+        slot_key = request.form.get('slot_key')
+        purpose = request.form.get('purpose', '').strip()
+        first_name = request.form.get('first_name', '').strip()
+        middle_name = request.form.get('middle_name', '').strip() or None
+        last_name = request.form.get('last_name', '').strip()
+        birthday_str = request.form.get('birthday', '').strip()
+        section = request.form.get('section', '').strip() or None
+        year_level = request.form.get('year_level', '').strip() or None
+        mood_rating = request.form.get('mood_rating', '').strip() or None
+        mood_description = request.form.getlist('mood_description')
+        mood_note = request.form.get('mood_note', '').strip()
+        contact_email = request.form.get('contact_email', '').strip() or None
+        contact_phone = request.form.get('contact_phone', '').strip() or None
+
+        errors = []
+        if not slot_key:
+            errors.append('Please select a time slot.')
+        if not first_name:
+            errors.append('First Name is required.')
+        if not last_name:
+            errors.append('Last Name is required.')
+        if not birthday_str:
+            errors.append('Birthday is required.')
+        if not purpose:
+            errors.append('Please describe your purpose for this appointment.')
+
+        birthday_obj = None
+        if birthday_str:
+            try:
+                birthday_obj = datetime.strptime(birthday_str, '%Y-%m-%d').date()
+            except ValueError:
+                errors.append('Invalid birthday format.')
+
+        if errors:
+            for e in errors:
+                flash(e, 'danger')
+            return redirect(url_for('book_appointment_public', counselor_id=counselor_id, date=selected_date.strftime('%Y-%m-%d')))
+
+        if guest_has_active_appointment_hash(first_name, last_name, birthday_str):
+            flash('You already have an active appointment. Please wait for it to be completed first.', 'danger')
+            return redirect(url_for('book_appointment_public', counselor_id=counselor_id, date=selected_date.strftime('%Y-%m-%d')))
+
+        try:
+            start_str, end_str = slot_key.split('_')
+            start_h, start_m = int(start_str[:2]), int(start_str[2:])
+            end_h, end_m = int(end_str[:2]), int(end_str[2:])
+            slot_start = time(start_h, start_m)
+            slot_end = time(end_h, end_m)
+        except Exception:
+            flash('Invalid time slot selected.', 'danger')
+            return redirect(url_for('book_appointment_public', counselor_id=counselor_id, date=selected_date.strftime('%Y-%m-%d')))
+
+        refreshed_slots = generate_available_slots(counselor_id, selected_date)
+        valid_keys = {s['key'] for s in refreshed_slots}
+        if slot_key not in valid_keys:
+            flash('This slot is no longer available.', 'danger')
+            return redirect(url_for('book_appointment_public', counselor_id=counselor_id, date=selected_date.strftime('%Y-%m-%d')))
+
+        existing = Appointment.query.filter_by(
+            counselor_id=counselor_id,
+            date=selected_date,
+            start_time=slot_start
+        ).filter(Appointment.status.in_(['pending', 'approved'])).first()
+        if existing:
+            flash('This slot is no longer available.', 'danger')
+            return redirect(url_for('book_appointment_public', counselor_id=counselor_id, date=selected_date.strftime('%Y-%m-%d')))
+
+        mood_desc_joined = None
+        if mood_description or mood_note:
+            labels = dict((k, v) for k, v in FEELING_OPTIONS)
+            chosen = []
+            for key in mood_description:
+                if key in labels:
+                    chosen.append(labels[key].split(' – ')[0].split(' (')[0])
+            if mood_note:
+                chosen.append(mood_note)
+            mood_desc_joined = '; '.join(chosen) if chosen else None
+
+        appointment = Appointment(
+            counselor_id=counselor_id,
+            student_id=None,
+            date=selected_date,
+            start_time=slot_start,
+            end_time=slot_end,
+            purpose=purpose,
+            first_name=first_name,
+            middle_name=middle_name,
+            last_name=last_name,
+            birthday=birthday_obj,
+            section=section,
+            year_level=year_level,
+            mood_rating=mood_rating,
+            mood_description=mood_desc_joined,
+            contact_email=contact_email,
+            contact_phone=contact_phone,
+            is_guest=True,
+        )
+        db.session.add(appointment)
+        db.session.commit()
+        flash('Appointment request submitted! Please wait for counselor approval. You may check back later for updates.', 'success')
+        return redirect(url_for('booking_confirmation', appointment_id=appointment.id))
+
+    dates = generate_weekdays(today, 14)
+    calendar = build_calendar_month(view_month, today, selected_date, counselor_id)
+    return render_template('book_appointment_public.html',
+                           counselor=counselor,
+                           available_slots=available_slots,
+                           selected_date=selected_date,
+                           dates=dates,
+                           calendar=calendar,
+                           view_month=view_month,
+                           weekday_names=WEEKDAY_NAMES,
+                           default_start=DEFAULT_WORK_START.strftime('%H:%M'),
+                           default_end=DEFAULT_WORK_END.strftime('%H:%M'),
+                           mood_options=MOOD_OPTIONS,
+                           feeling_options=FEELING_OPTIONS)
+
+
+@app.route('/booking/<int:appointment_id>/confirmation')
+def booking_confirmation(appointment_id):
+    appt = Appointment.query.get_or_404(appointment_id)
+    if not appt.is_guest:
+        return redirect(url_for('index'))
+    return render_template('booking_confirmation.html',
+                           appointment=appt,
+                           weekday_names=WEEKDAY_NAMES)
+
+
 with app.app_context():
+    inspector = db.inspect(db.engine)
+    existing_tables = inspector.get_table_names()
+
+    if 'appointment' in existing_tables:
+        appt_columns = [c['name'] for c in inspector.get_columns('appointment')]
+        student_id_nullable = next((c['nullable'] for c in inspector.get_columns('appointment') if c['name'] == 'student_id'), True)
+        needs_rebuild = (not student_id_nullable) or any(col not in appt_columns for col, _ in [
+            ('first_name', ''), ('middle_name', ''), ('last_name', ''), ('birthday', ''),
+            ('section', ''), ('year_level', ''), ('mood_rating', ''), ('mood_description', ''),
+            ('contact_email', ''), ('contact_phone', ''), ('is_guest', ''),
+        ])
+
+        if needs_rebuild:
+            with db.engine.connect() as conn:
+                conn.execute(db.text('ALTER TABLE appointment RENAME TO appointment_old'))
+                conn.commit()
+            db.create_all()
+            with db.engine.connect() as conn:
+                cols_old = [c['name'] for c in inspector.get_columns('appointment_old')]
+                cols_new = [c['name'] for c in inspector.get_columns('appointment')]
+                common = [c for c in cols_old if c in cols_new]
+                placeholders = ', '.join(common)
+                try:
+                    conn.execute(db.text(f'INSERT INTO appointment ({placeholders}) SELECT {placeholders} FROM appointment_old'))
+                    conn.commit()
+                except Exception as e:
+                    app.logger.warning('Could not copy all appointment data: %s', e)
+                    conn.rollback()
+                try:
+                    conn.execute(db.text('DROP TABLE appointment_old'))
+                    conn.commit()
+                except Exception:
+                    pass
+        else:
+            with db.engine.connect() as conn:
+                for col_name, col_type in [
+                    ('first_name', 'VARCHAR(80)'), ('middle_name', 'VARCHAR(80)'), ('last_name', 'VARCHAR(80)'),
+                    ('birthday', 'DATE'), ('section', 'VARCHAR(50)'), ('year_level', 'VARCHAR(50)'),
+                    ('mood_rating', 'VARCHAR(20)'), ('mood_description', 'VARCHAR(200)'),
+                    ('contact_email', 'VARCHAR(120)'), ('contact_phone', 'VARCHAR(20)'),
+                    ('is_guest', 'BOOLEAN DEFAULT 0'),
+                ]:
+                    if col_name not in appt_columns:
+                        conn.execute(db.text(f'ALTER TABLE appointment ADD COLUMN {col_name} {col_type}'))
+                        conn.commit()
+
     db.create_all()
+
     inspector = db.inspect(db.engine)
     user_columns = [c['name'] for c in inspector.get_columns('user')]
     if 'reset_token' not in user_columns:

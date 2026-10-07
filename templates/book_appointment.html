@@ -25,7 +25,7 @@
 
     <h3 style="margin-bottom: 0.25rem; font-family: 'Inter', sans-serif; font-weight: 600; font-size: 1.05rem;">Select a Date (Weekdays Only)</h3>
     <p style="color: var(--text-secondary); font-size: 0.9rem; margin-bottom: 1rem;">
-        Selected: <strong style="color: var(--text-primary); font-weight: 600;">{{ weekday_names[selected_date.weekday()] }}, {{ selected_date.strftime('%B %-d, %Y') }}</strong>
+        Selected: <strong style="color: var(--text-primary); font-weight: 600;">{{ weekday_names[selected_date.weekday()] }}, {{ selected_date|fmt_long }}</strong>
     </p>
 
     <div class="calendar" role="grid" aria-label="Availability calendar, weekdays only">
