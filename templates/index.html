@@ -1,0 +1,58 @@
+{% extends "base.html" %}
+
+{% block title %}Home - Counseling Appointment System{% endblock %}
+
+{% block content %}
+<div class="hero">
+    <div class="hero-label">
+        <span>·</span>
+        Counseling Center
+        <span>·</span>
+    </div>
+    <h2>Your well-being starts with a conversation.</h2>
+    <p>Book appointments with our professional counselors. Take the first step toward clarity, growth, and mental wellness — on your schedule.</p>
+    {% if not current_user.is_authenticated %}
+        <a href="{{ url_for('register') }}" class="btn btn-primary" style="font-size: 1rem; padding: 1rem 2.25rem;">Get Started</a>
+    {% endif %}
+</div>
+
+<div class="card">
+    <div class="section-label">Our Counselors</div>
+    <h2 style="border: none; padding: 0; margin-bottom: 0.5rem; font-size: 2.1rem;">Meet the people ready to listen.</h2>
+    <p style="color: var(--text-secondary); margin-bottom: 2rem; max-width: 600px;">
+        Each counselor brings specialized expertise and a compassionate approach. Choose the right fit for your journey.
+    </p>
+    {% if counselors %}
+        <div class="counselor-grid">
+            {% for counselor in counselors %}
+                <div class="counselor-card">
+                    <div class="counselor-avatar">{{ counselor.full_name.split()[0][0] if counselor.full_name else '?' }}</div>
+                    <h3 style="margin-bottom: 0.3rem;">{{ counselor.full_name }}</h3>
+                    {% if counselor.specialty %}
+                        <p style="color: var(--text-primary); font-weight: 500; margin-bottom: 0.65rem; font-size: 0.92rem;">{{ counselor.specialty }}</p>
+                    {% endif %}
+                    {% if counselor.email %}
+                        <p style="color: var(--text-secondary); font-size: 0.88rem; margin-bottom: 0.35rem;">{{ counselor.email }}</p>
+                    {% endif %}
+                    {% if counselor.phone %}
+                        <p style="color: var(--text-secondary); font-size: 0.88rem;">{{ counselor.phone }}</p>
+                    {% endif %}
+                    {% if current_user.is_authenticated and current_user.is_student %}
+                        {% if can_book %}
+                            <a href="{{ url_for('book_appointment', counselor_id=counselor.id) }}" class="btn btn-primary" style="margin-top: 1.25rem; width: 100%;">Book Appointment</a>
+                        {% else %}
+                            <div class="limit-badge">
+                                You have an active appointment
+                            </div>
+                        {% endif %}
+                    {% endif %}
+                </div>
+            {% endfor %}
+        </div>
+    {% else %}
+        <div class="empty-state">
+            <p>No counselors registered yet. Please check back later.</p>
+        </div>
+    {% endif %}
+</div>
+{% endblock %}

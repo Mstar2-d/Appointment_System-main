@@ -1,0 +1,128 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>{% block title %}Norzagaray College — Guidance & Counseling{% endblock %}</title>
+    <link rel="icon" type="image/svg+xml" href="{{ url_for('static', filename='logo.svg') }}">
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&family=Playfair+Display:wght@400;500;600;700;800;900&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="{{ url_for('static', filename='styles.css') }}">
+</head>
+<body>
+    <nav class="navbar">
+        <a href="{{ url_for('index') }}" class="brand" id="appTitle" title="{{ 'Double-click to switch to Student access' if session.get('counselor_access') else 'Double-click for Counselor access' }}">
+            <div class="brand-logo{% if session.get('counselor_access') %} counselor-mode{% endif %}">
+                <img src="{{ url_for('static', filename='logo.svg') }}" alt="Norzagaray College Guidance and Counseling Center Seal">
+                {% if session.get('counselor_access') %}<span class="counselor-badge" title="Counselor mode active">C</span>{% endif %}
+            </div>
+            <div class="brand-text">
+                <h1 class="brand-title">Norzagaray College</h1>
+                <span class="brand-subtitle">Guidance &amp; Counseling Center</span>
+            </div>
+        </a>
+        <div class="nav-links">
+            <a href="{{ url_for('index') }}">Home</a>
+            {% if current_user.is_authenticated %}
+                {% if current_user.is_counselor %}
+                    <a href="{{ url_for('counselor_dashboard') }}">Dashboard</a>
+                    <a href="{{ url_for('block_time') }}">Block Time</a>
+                {% else %}
+                    <a href="{{ url_for('student_dashboard') }}">Dashboard</a>
+                {% endif %}
+                <span class="nav-dot">·</span>
+                <span class="nav-username">{{ current_user.full_name }}</span>
+                <a href="{{ url_for('logout') }}" class="btn btn-danger btn-sm">Logout</a>
+            {% else %}
+                {% if session.get('counselor_access') %}
+                    <a href="{{ url_for('login') }}">Counselor Login</a>
+                    <a href="{{ url_for('register') }}" class="btn btn-primary btn-sm">Counselor Sign Up</a>
+                {% else %}
+                    <a href="{{ url_for('login') }}">Student Login</a>
+                    <a href="{{ url_for('register') }}" class="btn btn-primary btn-sm">Student Sign Up</a>
+                {% endif %}
+            {% endif %}
+        </div>
+    </nav>
+
+    <form id="counselorAccessForm" method="POST" action="{{ url_for('toggle_counselor_access') }}" style="display: none;"></form>
+
+    <script>
+    (function() {
+        var timer = null;
+        var title = document.getElementById('appTitle');
+        var form = document.getElementById('counselorAccessForm');
+        if (!title || !form) return;
+
+        title.addEventListener('click', function(e) {
+            e.preventDefault();
+            clearTimeout(timer);
+            if (e.detail === 2) {
+                form.submit();
+            } else {
+                timer = setTimeout(function() {
+                    window.location.href = title.getAttribute('href');
+                }, 280);
+            }
+        });
+
+        title.addEventListener('dblclick', function(e) {
+            e.preventDefault();
+        });
+    })();
+
+    (function() {
+        function dismissAlert(alert) {
+            if (!alert || !alert.classList.contains('alert-dismissible')) return;
+            if (alert.classList.contains('closing')) return;
+
+            alert.classList.add('closing');
+            var cleanupTimer = setTimeout(function() {
+                alert.classList.add('closed');
+                var removeTimer = setTimeout(function() {
+                    if (alert.parentNode) alert.parentNode.removeChild(alert);
+                }, 340);
+                if (alert.dataset) alert.dataset.__removeTimer = String(removeTimer);
+            }, 260);
+            if (alert.dataset) alert.dataset.__closeTimer = String(cleanupTimer);
+        }
+
+        document.addEventListener('click', function(e) {
+            var btn = e.target.closest ? e.target.closest('.alert-close') : null;
+            if (!btn) return;
+            var alert = btn.closest('.alert-dismissible');
+            dismissAlert(alert);
+        });
+
+        document.addEventListener('keydown', function(e) {
+            if (e.key !== 'Escape') return;
+            var alerts = document.querySelectorAll('.alert-dismissible:not(.closing)');
+            for (var i = 0; i < alerts.length; i++) dismissAlert(alerts[i]);
+        });
+    })();
+    </script>
+
+    <div class="flash-messages">
+        {% with messages = get_flashed_messages(with_categories=true) %}
+            {% if messages %}
+                {% for category, message in messages %}
+                    <div class="alert alert-{{ category }} alert-dismissible" role="alert">
+                        <span class="alert-message">{{ message }}</span>
+                        <button type="button" class="alert-close" aria-label="Close" title="Dismiss">
+                            <svg aria-hidden="true" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 14 14" width="14" height="14" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                                <line x1="1" y1="1" x2="13" y2="13"></line>
+                                <line x1="13" y1="1" x2="1" y2="13"></line>
+                            </svg>
+                        </button>
+                    </div>
+                {% endfor %}
+            {% endif %}
+        {% endwith %}
+    </div>
+
+    <div class="container">
+        {% block content %}{% endblock %}
+    </div>
+</body>
+</html>

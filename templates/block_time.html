@@ -1,0 +1,88 @@
+{% extends "base.html" %}
+
+{% block title %}Mark Unavailable Time{% endblock %}
+
+{% block content %}
+<div class="auth-container" style="max-width: 720px;">
+    <div class="auth-card">
+        <div class="section-label" style="margin-bottom: 0.5rem;">Availability</div>
+        <h2>Mark Time as Unavailable</h2>
+        <p style="text-align: center; color: var(--text-secondary); margin-bottom: 2rem; font-size: 0.95rem;">
+            You are <strong style="color: var(--success);">always available</strong> during 09:00 – 17:00 by default.<br>
+            Use this form only when you want to block specific times or days.
+        </p>
+        <form method="POST" action="{{ url_for('block_time') }}" id="blockForm">
+            <div class="form-group">
+                <label for="date">Date</label>
+                <input type="date" id="date" name="date" required>
+            </div>
+
+            <div class="form-group">
+                <label style="display: flex; align-items: center; cursor: pointer; font-weight: 500; color: var(--text-primary); background: var(--warning-bg); padding: 1rem 1.1rem; border-radius: var(--radius-sm); margin: 0; gap: 0.75rem; border: 1px solid rgba(138, 109, 43, 0.12);">
+                    <input type="checkbox" id="is_full_day" name="is_full_day" style="width: auto; width: 20px; height: 20px; cursor: pointer; accent-color: var(--text-primary);" onchange="toggleTimeFields()">
+                    Block entire day (09:00 – 17:00)
+                </label>
+            </div>
+
+            <div id="timeFields">
+                <div class="form-row">
+                    <div class="form-group">
+                        <label for="start_time">Start Time (Unavailable from)</label>
+                        <input type="time" id="start_time" name="start_time">
+                    </div>
+                    <div class="form-group">
+                        <label for="end_time">End Time (Unavailable until)</label>
+                        <input type="time" id="end_time" name="end_time">
+                    </div>
+                </div>
+            </div>
+
+            <div class="form-group">
+                <label for="reason">Reason (optional)</label>
+                <input type="text" id="reason" name="reason" placeholder="e.g. Lunch break, Meeting, Personal leave...">
+            </div>
+
+            <div class="info-box" style="margin-bottom: 2rem;">
+                <p style="font-weight: 600; color: var(--text-primary); margin-bottom: 0.5rem; font-size: 0.92rem;">How it works</p>
+                <ul style="color: var(--text-secondary); font-size: 0.88rem; margin: 0; padding-left: 1.25rem; line-height: 1.7;">
+                    <li>Students will NOT see any available slots during your blocked times.</li>
+                    <li>Blocked times can be removed later if plans change.</li>
+                    <li>Existing appointments are never auto-cancelled when you block overlapping times.</li>
+                </ul>
+            </div>
+
+            <button type="submit" class="btn btn-primary" style="width: 100%; padding: 1rem; font-size: 0.95rem;">Mark as Unavailable</button>
+            <a href="{{ url_for('counselor_dashboard') }}" class="btn btn-secondary" style="width: 100%; text-align: center; margin-top: 0.75rem; display: block; padding: 1rem;">Back to Dashboard</a>
+        </form>
+    </div>
+</div>
+
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+    const today = new Date().toISOString().split('T')[0];
+    document.getElementById('date').min = today;
+    document.getElementById('date').value = today;
+    document.getElementById('start_time').value = '12:00';
+    document.getElementById('end_time').value = '13:00';
+    toggleTimeFields();
+});
+
+function toggleTimeFields() {
+    const cb = document.getElementById('is_full_day');
+    const fields = document.getElementById('timeFields');
+    const startTime = document.getElementById('start_time');
+    const endTime = document.getElementById('end_time');
+    if (cb.checked) {
+        fields.style.opacity = '0.45';
+        fields.style.pointerEvents = 'none';
+        startTime.required = false;
+        endTime.required = false;
+    } else {
+        fields.style.opacity = '1';
+        fields.style.pointerEvents = 'auto';
+        startTime.required = true;
+        endTime.required = true;
+    }
+}
+</script>
+{% endblock %}

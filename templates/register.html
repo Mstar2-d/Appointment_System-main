@@ -1,0 +1,77 @@
+{% extends "base.html" %}
+
+{% block title %}Register{% endblock %}
+
+{% block content %}
+<div class="auth-container" style="max-width: 640px;">
+    <div class="auth-card">
+        {% if counselor_access %}
+            <h2>Counselor Sign Up</h2>
+            <div class="mode-banner">
+                Counselor Registration Mode
+            </div>
+            <input type="hidden" name="role" value="counselor">
+        {% else %}
+            <h2>Student Sign Up</h2>
+            <div class="mode-banner" style="background: var(--info-bg); color: var(--info); border-color: rgba(43, 74, 107, 0.15);">
+                Student Registration
+            </div>
+            <input type="hidden" name="role" value="student">
+        {% endif %}
+        <p style="text-align: center; color: var(--text-secondary); margin-bottom: 2rem; font-size: 0.95rem;">
+            Create your account to start booking appointments.
+        </p>
+        <form method="POST" action="{{ url_for('register') }}" id="registerForm">
+            <div class="form-row">
+                <div class="form-group">
+                    <label for="full_name">Full Name</label>
+                    <input type="text" id="full_name" name="full_name" required placeholder="Enter your full name">
+                </div>
+                <div class="form-group">
+                    <label for="username">Username</label>
+                    <input type="text" id="username" name="username" required placeholder="Enter your username">
+                </div>
+            </div>
+
+            <div class="form-row">
+                <div class="form-group">
+                    <label for="email">Email</label>
+                    <input type="email" id="email" name="email" required placeholder="Enter your email">
+                </div>
+                <div class="form-group">
+                    <label for="phone">Phone Number</label>
+                    <input type="tel" id="phone" name="phone" placeholder="+63 9000000000">
+                </div>
+            </div>
+
+            {% if not counselor_access %}
+            <div class="form-group" id="student_fields">
+                <label for="student_id">Student ID</label>
+                <input type="text" id="student_id" name="student_id" placeholder="2025-0000">
+            </div>
+            {% endif %}
+
+            {% if counselor_access %}
+            <div class="form-group" id="counselor_fields">
+                <label for="specialty">Specialty / Area of Expertise</label>
+                <input type="text" id="specialty" name="specialty" placeholder="Mental Health, Academic Guidance, Career Counseling...">
+            </div>
+            {% endif %}
+
+            <div class="form-group">
+                <label for="password">Password</label>
+                <input type="password" id="password" name="password" required minlength="8" placeholder="At least 8 characters">
+            </div>
+
+            <button type="submit" class="btn btn-primary" style="width: 100%; padding: 1rem; font-size: 0.95rem;">
+                {% if counselor_access %}Create Counselor Account{% else %}Create Student Account{% endif %}
+            </button>
+        </form>
+        <div class="auth-link">
+            <p>Already have an account? <a href="{{ url_for('login') }}">
+                {% if counselor_access %}Counselor Login{% else %}Student Login{% endif %}
+            </a></p>
+        </div>
+    </div>
+</div>
+{% endblock %}

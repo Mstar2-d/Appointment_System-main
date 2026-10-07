@@ -1,0 +1,153 @@
+{% extends "base.html" %}
+
+{% block title %}Counselor Dashboard{% endblock %}
+
+{% block content %}
+<div class="section-label" style="margin-bottom: 0.75rem;">Dashboard</div>
+<h2 style="font-size: 2.25rem; margin-bottom: 2.5rem; border: none; padding: 0;">Overview</h2>
+
+<div class="stats-grid">
+    <div class="stat-card">
+        <div class="stat-number">{{ appointments|length }}</div>
+        <div class="stat-label">Upcoming Appointments</div>
+    </div>
+    <div class="stat-card">
+        <div class="stat-number">{{ pending_appointments|length }}</div>
+        <div class="stat-label">Pending Requests</div>
+    </div>
+    <div class="stat-card">
+        <div class="stat-number">{{ blocked_times|length }}</div>
+        <div class="stat-label">Days Blocked</div>
+    </div>
+    <div class="stat-card">
+        <div class="stat-number" style="font-size: 1.75rem; font-family: 'Inter', sans-serif;">09:00–17:00</div>
+        <div class="stat-label">Working Hours</div>
+    </div>
+</div>
+
+<div class="card">
+    <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 0.25rem; flex-wrap: wrap; gap: 0.75rem;">
+        <div>
+            <div class="section-label" style="margin-bottom: 0.5rem;">Schedule</div>
+            <h2 style="margin: 0; border: none; padding: 0; font-size: 1.6rem;">Upcoming Appointments</h2>
+        </div>
+        <div style="display: flex; gap: 0.6rem; flex-wrap: wrap;">
+            <form method="POST" action="{{ url_for('counselor_test_email') }}">
+                <button type="submit" class="btn btn-secondary" style="padding: 0.7rem 1.2rem; font-size: 0.85rem;">
+                    Send Test Email
+                </button>
+            </form>
+            <a href="{{ url_for('block_time') }}" class="btn btn-primary" style="padding: 0.7rem 1.2rem; font-size: 0.85rem;">
+                Block Unavailable Time
+            </a>
+        </div>
+    </div>
+
+    {% if appointments %}
+        <div class="table-responsive">
+            <table class="table">
+                <thead>
+                    <tr>
+                        <th>Date</th>
+                        <th>Time</th>
+                        <th>Student</th>
+                        <th>Purpose</th>
+                        <th>Status</th>
+                        <th>Actions</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for appt in appointments %}
+                        <tr>
+                            <td style="font-weight: 500;">{{ appt.date.strftime('%b %d, %Y') }}</td>
+                            <td>{{ appt.time_str }}</td>
+                            <td>
+                                <strong style="font-weight: 600;">{{ appt.student.full_name }}</strong>
+                                {% if appt.student.student_id %}
+                                    <br><small style="color: var(--text-secondary); font-size: 0.82rem;">{{ appt.student.student_id }}</small>
+                                {% endif %}
+                            </td>
+                            <td style="max-width: 260px; color: var(--text-secondary);">{{ appt.purpose[:80] }}{% if appt.purpose|length > 80 %}...{% endif %}</td>
+                            <td>
+                                {% if appt.status == 'pending' %}
+                                    <span class="badge badge-pending">Pending</span>
+                                {% elif appt.status == 'approved' %}
+                                    <span class="badge badge-approved">Approved</span>
+                                {% elif appt.status == 'rejected' %}
+                                    <span class="badge badge-rejected">Rejected</span>
+                                {% elif appt.status == 'completed' %}
+                                    <span class="badge badge-completed">Completed</span>
+                                {% endif %}
+                            </td>
+                            <td>
+                                <div class="action-btns">
+                                    {% if appt.status == 'pending' %}
+                                        <form method="POST" action="{{ url_for('update_appointment', appointment_id=appt.id, action='approve') }}">
+                                            <button type="submit" class="btn btn-success" style="padding: 0.5rem 0.95rem; font-size: 0.82rem;">Approve</button>
+                                        </form>
+                                        <form method="POST" action="{{ url_for('update_appointment', appointment_id=appt.id, action='reject') }}">
+                                            <button type="submit" class="btn btn-danger" style="padding: 0.5rem 0.95rem; font-size: 0.82rem;">Reject</button>
+                                        </form>
+                                    {% elif appt.status == 'approved' %}
+                                        <form method="POST" action="{{ url_for('update_appointment', appointment_id=appt.id, action='complete') }}">
+                                            <button type="submit" class="btn btn-info" style="padding: 0.5rem 0.95rem; font-size: 0.82rem;">Mark Complete</button>
+                                        </form>
+                                    {% endif %}
+                                </div>
+                            </td>
+                        </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
+    {% else %}
+        <div class="empty-state">
+            <p>No upcoming appointments.</p>
+            <p style="margin-top: 0.5rem; font-size: 0.95rem;">Students can book you anytime between 09:00 – 17:00. Use "Block Time" to mark yourself unavailable.</p>
+        </div>
+    {% endif %}
+</div>
+
+<div class="card">
+    <div class="section-label" style="margin-bottom: 0.5rem;">Availability</div>
+    <h2 style="border: none; padding: 0; margin: 0 0 0.25rem 0; font-size: 1.6rem;">Blocked / Unavailable Times</h2>
+    {% if blocked_times %}
+        <div class="table-responsive">
+            <table class="table">
+                <thead>
+                    <tr>
+                        <th>Date</th>
+                        <th>Time</th>
+                        <th>Reason</th>
+                        <th>Actions</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for bt in blocked_times %}
+                        <tr>
+                            <td style="font-weight: 500;">{{ bt.date.strftime('%b %d, %Y') }}</td>
+                            <td>
+                                {% if bt.is_full_day %}
+                                    <span class="badge badge-rejected">Full Day</span>
+                                {% else %}
+                                    {{ bt.time_str }}
+                                {% endif %}
+                            </td>
+                            <td style="color: var(--text-secondary);">{{ bt.reason if bt.reason else '—' }}</td>
+                            <td>
+                                <form method="POST" action="{{ url_for('delete_blocked', blocked_id=bt.id) }}" onsubmit="return confirm('Remove this blocked time?');">
+                                    <button type="submit" class="btn btn-danger" style="padding: 0.5rem 0.95rem; font-size: 0.82rem;">Remove</button>
+                                </form>
+                            </td>
+                        </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
+    {% else %}
+        <div class="empty-state">
+            <p>No blocked times. You are fully available during working hours (09:00–17:00).</p>
+        </div>
+    {% endif %}
+</div>
+{% endblock %}
