@@ -1164,6 +1164,65 @@ textarea {
     flex-wrap: wrap;
 }
 
+/* ---------- Tabs ---------- */
+.tabs {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 0.5rem;
+    margin-bottom: 1.75rem;
+    border-bottom: 1px solid var(--border-light);
+}
+
+.tab-link {
+    appearance: none;
+    border: none;
+    background: transparent;
+    font-family: inherit;
+    font-size: 0.95rem;
+    font-weight: 500;
+    color: var(--text-secondary);
+    padding: 0.75rem 1.15rem;
+    cursor: pointer;
+    border-bottom: 2px solid transparent;
+    margin-bottom: -1px;
+    display: inline-flex;
+    align-items: center;
+    gap: 0.5rem;
+    transition: color 0.2s ease, border-color 0.2s ease;
+}
+
+.tab-link:hover {
+    color: var(--accent);
+}
+
+.tab-link.active {
+    color: var(--accent);
+    border-bottom-color: var(--accent);
+    font-weight: 600;
+}
+
+.tab-count {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    min-width: 20px;
+    height: 20px;
+    padding: 0 0.4rem;
+    border-radius: 999px;
+    background: var(--warning-bg);
+    color: var(--warning);
+    font-size: 0.72rem;
+    font-weight: 600;
+}
+
+.tab-panel {
+    display: none;
+}
+
+.tab-panel.active {
+    display: block;
+}
+
 /* ---------- Misc ---------- */
 .empty-state {
     text-align: center;

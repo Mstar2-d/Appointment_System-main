@@ -12,7 +12,7 @@
 </head>
 <body>
     <nav class="navbar">
-        <a href="{{ url_for('index') }}" class="brand" id="appTitle" title="{{ 'Double-click to switch to Student access' if session.get('counselor_access') else 'Double-click for Counselor access' }}">
+        <a href="{{ url_for('index') }}" class="brand" id="appTitle" title="{{ 'Press Ctrl+` to switch to Student access' if session.get('counselor_access') else 'Press Ctrl+` for Counselor access' }}">
             <div class="brand-logo{% if session.get('counselor_access') %} counselor-mode{% endif %}">
                 <img src="{{ url_for('static', filename='logo.svg') }}" alt="Norzagaray College Guidance and Counseling Center Seal">
                 {% if session.get('counselor_access') %}<span class="counselor-badge" title="Counselor mode active">C</span>{% endif %}
@@ -24,23 +24,27 @@
         </a>
         <div class="nav-links">
             <a href="{{ url_for('index') }}">Home</a>
+            {% if current_user.is_authenticated and current_user.is_admin %}
+                <a href="{{ url_for('counselor_dashboard') }}#addAccount">Add Account</a>
+            {% endif %}
             {% if current_user.is_authenticated %}
                 {% if current_user.is_counselor %}
-                    <a href="{{ url_for('counselor_dashboard') }}">Dashboard</a>
-                    <a href="{{ url_for('block_time') }}">Block Time</a>
-                {% else %}
-                    <a href="{{ url_for('student_dashboard') }}">Dashboard</a>
+                    {% if not current_user.is_admin %}
+                        <a href="{{ url_for('block_time') }}">Block Time</a>
+                    {% endif %}
+                {% elif current_user.is_teacher %}
+                    <a href="{{ url_for('teacher_refer') }}">Refer Student</a>
                 {% endif %}
-                <span class="nav-dot">·</span>
+                {% if not current_user.is_admin %}
+                    <span class="nav-dot">·</span>
+                {% endif %}
                 <span class="nav-username">{{ current_user.full_name }}</span>
                 <a href="{{ url_for('logout') }}" class="btn btn-danger btn-sm">Logout</a>
             {% else %}
                 {% if session.get('counselor_access') %}
                     <a href="{{ url_for('login') }}">Counselor Login</a>
-                    <a href="{{ url_for('register') }}" class="btn btn-primary btn-sm">Counselor Sign Up</a>
                 {% else %}
-                    <a href="{{ url_for('login') }}">Student Login</a>
-                    <a href="{{ url_for('register') }}" class="btn btn-primary btn-sm">Student Sign Up</a>
+                    <a href="{{ url_for('index') }}#counselors" class="btn btn-primary btn-sm">Book an Appointment</a>
                 {% endif %}
             {% endif %}
         </div>
@@ -48,60 +52,7 @@
 
     <form id="counselorAccessForm" method="POST" action="{{ url_for('toggle_counselor_access') }}" style="display: none;"></form>
 
-    <script>
-    (function() {
-        var timer = null;
-        var title = document.getElementById('appTitle');
-        var form = document.getElementById('counselorAccessForm');
-        if (!title || !form) return;
-
-        title.addEventListener('click', function(e) {
-            e.preventDefault();
-            clearTimeout(timer);
-            if (e.detail === 2) {
-                form.submit();
-            } else {
-                timer = setTimeout(function() {
-                    window.location.href = title.getAttribute('href');
-                }, 280);
-            }
-        });
-
-        title.addEventListener('dblclick', function(e) {
-            e.preventDefault();
-        });
-    })();
-
-    (function() {
-        function dismissAlert(alert) {
-            if (!alert || !alert.classList.contains('alert-dismissible')) return;
-            if (alert.classList.contains('closing')) return;
-
-            alert.classList.add('closing');
-            var cleanupTimer = setTimeout(function() {
-                alert.classList.add('closed');
-                var removeTimer = setTimeout(function() {
-                    if (alert.parentNode) alert.parentNode.removeChild(alert);
-                }, 340);
-                if (alert.dataset) alert.dataset.__removeTimer = String(removeTimer);
-            }, 260);
-            if (alert.dataset) alert.dataset.__closeTimer = String(cleanupTimer);
-        }
-
-        document.addEventListener('click', function(e) {
-            var btn = e.target.closest ? e.target.closest('.alert-close') : null;
-            if (!btn) return;
-            var alert = btn.closest('.alert-dismissible');
-            dismissAlert(alert);
-        });
-
-        document.addEventListener('keydown', function(e) {
-            if (e.key !== 'Escape') return;
-            var alerts = document.querySelectorAll('.alert-dismissible:not(.closing)');
-            for (var i = 0; i < alerts.length; i++) dismissAlert(alerts[i]);
-        });
-    })();
-    </script>
+    <script src="{{ url_for('static', filename='app.js') }}"></script>
 
     <div class="flash-messages">
         {% with messages = get_flashed_messages(with_categories=true) %}

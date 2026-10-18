@@ -1,18 +1,14 @@
 {% extends "base.html" %}
 
-{% block title %}Login{% endblock %}
+{% block title %}Counselor Login{% endblock %}
 
 {% block content %}
 <div class="auth-container">
     <div class="auth-card">
-        {% if counselor_access %}
-            <h2>Counselor Login</h2>
-            <div class="mode-banner">
-                Counselor Login Mode Active
-            </div>
-        {% else %}
-            <h2>Student Login</h2>
-        {% endif %}
+        <h2>Counselor Login</h2>
+        <div class="mode-banner">
+            Counselor Login Mode Active
+        </div>
         <p style="text-align: center; color: var(--text-secondary); margin-bottom: 2rem; font-size: 0.95rem;">
             Welcome back. Please enter your credentials to continue.
         </p>
@@ -26,16 +22,11 @@
                 <input type="password" id="password" name="password" required placeholder="Enter your password">
             </div>
             <button type="submit" class="btn btn-primary" style="width: 100%; padding: 1rem; font-size: 0.95rem;">
-                {% if counselor_access %}Counselor Login{% else %}Student Login{% endif %}
+                Counselor Login
             </button>
         </form>
         <div class="auth-link" style="margin-top: 1.25rem;">
             <p><a href="{{ url_for('forgot_password') }}">Forgot Password?</a></p>
-        </div>
-        <div class="auth-link">
-            <p>Don't have an account? <a href="{{ url_for('register') }}">
-                {% if counselor_access %}Counselor Sign Up{% else %}Student Sign Up{% endif %}
-            </a></p>
         </div>
     </div>
 </div>

@@ -202,6 +202,7 @@ class User(UserMixin, db.Model):
     email = db.Column(db.String(120), unique=True, nullable=False)
     password_hash = db.Column(db.String(256), nullable=False)
     role = db.Column(db.String(20), nullable=False)
+    is_admin = db.Column(db.Boolean, default=False, nullable=False)
     full_name = db.Column(db.String(120), nullable=False)
     specialty = db.Column(db.String(120))
     student_id = db.Column(db.String(50))
@@ -222,6 +223,10 @@ class User(UserMixin, db.Model):
     @property
     def is_student(self):
         return self.role == 'student'
+
+    @property
+    def is_teacher(self):
+        return self.role == 'teacher'
 
 
 class BlockedTime(db.Model):
@@ -261,14 +266,18 @@ class Appointment(db.Model):
     birthday = db.Column(db.Date)
     section = db.Column(db.String(50))
     year_level = db.Column(db.String(50))
+    department = db.Column(db.String(100))
     mood_rating = db.Column(db.String(20))
     mood_description = db.Column(db.String(200))
     contact_email = db.Column(db.String(120))
     contact_phone = db.Column(db.String(20))
+    guest_student_id = db.Column(db.String(50))
+    referred_by_id = db.Column(db.Integer, db.ForeignKey('user.id'), nullable=True)
     is_guest = db.Column(db.Boolean, default=False)
 
     student = db.relationship('User', foreign_keys=[student_id], backref=db.backref('student_appointments', lazy=True))
     counselor = db.relationship('User', foreign_keys=[counselor_id], backref=db.backref('counselor_appointments', lazy=True))
+    referred_by = db.relationship('User', foreign_keys=[referred_by_id], backref=db.backref('referrals', lazy=True))
 
     __table_args__ = (db.UniqueConstraint('counselor_id', 'date', 'start_time', name='_counselor_date_time_uc'),)
 
@@ -377,9 +386,13 @@ def index():
     if current_user.is_authenticated:
         if current_user.is_counselor:
             return redirect(url_for('counselor_dashboard'))
+        elif current_user.is_teacher:
+            return redirect(url_for('teacher_dashboard'))
         else:
             return redirect(url_for('student_dashboard'))
-    counselors = User.query.filter_by(role='counselor').all()
+    if session.get('counselor_access'):
+        return redirect(url_for('login'))
+    counselors = User.query.filter_by(role='counselor', is_admin=False).all()
     return render_template('index.html', counselors=counselors)
 
 
@@ -387,80 +400,217 @@ def index():
 def toggle_counselor_access():
     session['counselor_access'] = not session.get('counselor_access', False)
     if session['counselor_access']:
-        flash('Counselor mode enabled — use Counselor Login / Sign Up above.', 'info')
+        flash('Counselor mode enabled — use Counselor Login above.', 'info')
     else:
         flash('Switched back to Student mode.', 'info')
     return redirect(request.referrer or url_for('index'))
 
 
-@app.route('/register', methods=['GET', 'POST'])
-def register():
-    if current_user.is_authenticated:
-        return redirect(url_for('index'))
-    counselor_access = session.get('counselor_access', False)
-    if request.method == 'POST':
-        if counselor_access:
-            role = 'counselor'
-        else:
-            role = 'student'
-        username = request.form.get('username')
-        email = request.form.get('email')
-        password = request.form.get('password')
-        full_name = request.form.get('full_name')
-        specialty = request.form.get('specialty')
-        student_id = request.form.get('student_id')
-        phone = request.form.get('phone')
+@app.route('/counselor/create', methods=['POST'])
+@login_required
+def create_counselor():
+    if not current_user.is_admin:
+        abort(403)
+    username = request.form.get('username')
+    email = request.form.get('email')
+    password = request.form.get('password')
+    full_name = request.form.get('full_name')
+    specialty = request.form.get('specialty')
+    phone = request.form.get('phone')
 
-        if role not in ['student', 'counselor']:
-            flash('Invalid role selected', 'danger')
-            return redirect(url_for('register'))
-        if User.query.filter_by(username=username).first():
-            flash('Username already taken', 'danger')
-            return redirect(url_for('register'))
-        if User.query.filter_by(email=email).first():
-            flash('Email already registered', 'danger')
-            return redirect(url_for('register'))
+    if not username or not email or not password or not full_name or not phone:
+        flash('Please fill in all required fields.', 'danger')
+        return redirect(url_for('counselor_dashboard'))
+    if User.query.filter_by(username=username).first():
+        flash('Username already taken.', 'danger')
+        return redirect(url_for('counselor_dashboard'))
+    if User.query.filter_by(email=email).first():
+        flash('Email already registered.', 'danger')
+        return redirect(url_for('counselor_dashboard'))
 
-        user = User(
-            username=username,
-            email=email,
-            role=role,
-            full_name=full_name,
-            specialty=specialty if role == 'counselor' else None,
-            student_id=student_id if role == 'student' else None,
-            phone=phone
-        )
-        user.set_password(password)
-        db.session.add(user)
-        db.session.commit()
+    user = User(
+        username=username,
+        email=email,
+        role='counselor',
+        full_name=full_name,
+        specialty=specialty,
+        phone=phone
+    )
+    user.set_password(password)
+    db.session.add(user)
+    db.session.commit()
 
-        flash('Registration successful! Please log in.', 'success')
-        return redirect(url_for('login'))
-    return render_template('register.html', counselor_access=counselor_access)
+    flash(f'Counselor account "{username}" created.', 'success')
+    return redirect(url_for('counselor_dashboard'))
+
+
+@app.route('/teacher/create', methods=['POST'])
+@login_required
+def create_teacher():
+    if not current_user.is_admin:
+        abort(403)
+    username = request.form.get('username')
+    email = request.form.get('email')
+    password = request.form.get('password')
+    full_name = request.form.get('full_name')
+    phone = request.form.get('phone')
+    department = request.form.get('department') # Teachers have a department
+
+    if not username or not email or not password or not full_name or not phone:
+        flash('Please fill in all required fields.', 'danger')
+        return redirect(url_for('counselor_dashboard'))
+    if User.query.filter_by(username=username).first():
+        flash('Username already taken.', 'danger')
+        return redirect(url_for('counselor_dashboard'))
+    if User.query.filter_by(email=email).first():
+        flash('Email already registered.', 'danger')
+        return redirect(url_for('counselor_dashboard'))
+
+    user = User(
+        username=username,
+        email=email,
+        role='teacher',
+        full_name=full_name,
+        phone=phone,
+        specialty=department # Using specialty field for department in User model to keep it simple, or I should add department to User model too.
+    )
+    user.set_password(password)
+    db.session.add(user)
+    db.session.commit()
+
+    flash(f'Teacher account "{username}" created.', 'success')
+    return redirect(url_for('counselor_dashboard'))
+
+
+@app.route('/counselor/<int:user_id>/delete', methods=['POST'])
+@login_required
+def delete_counselor(user_id):
+    if not current_user.is_admin:
+        abort(403)
+    
+    user = User.query.get_or_404(user_id)
+    if not user.is_counselor or user.is_admin:
+        flash('Invalid user account for deletion.', 'danger')
+        return redirect(url_for('counselor_dashboard'))
+    
+    # Clean up associated data
+    Appointment.query.filter_by(counselor_id=user.id).delete()
+    BlockedTime.query.filter_by(counselor_id=user.id).delete()
+    
+    db.session.delete(user)
+    db.session.commit()
+    
+    flash(f'Counselor account "{user.username}" and all associated data have been removed.', 'info')
+    return redirect(url_for('counselor_dashboard'))
+
+
+@app.route('/teacher/<int:user_id>/delete', methods=['POST'])
+@login_required
+def delete_teacher(user_id):
+    if not current_user.is_admin:
+        abort(403)
+    
+    user = User.query.get_or_404(user_id)
+    if not user.is_teacher:
+        flash('Invalid user account for deletion.', 'danger')
+        return redirect(url_for('counselor_dashboard'))
+    
+    # Clean up referrals
+    Appointment.query.filter_by(referred_by_id=user.id).delete()
+    
+    db.session.delete(user)
+    db.session.commit()
+    
+    flash(f'Teacher account "{user.username}" and all referrals have been removed.', 'info')
+    return redirect(url_for('counselor_dashboard'))
+
+
+@app.route('/teacher/dashboard')
+@login_required
+def teacher_dashboard():
+    if not current_user.is_teacher:
+        abort(403)
+    
+    referrals = Appointment.query.filter_by(referred_by_id=current_user.id).order_by(Appointment.date.desc()).all()
+
+    return render_template('teacher_dashboard.html', referrals=referrals)
+
+
+@app.route('/teacher/refer', methods=['GET', 'POST'])
+@login_required
+def teacher_refer():
+    if not current_user.is_teacher:
+        abort(403)
+
+    if request.method == 'GET':
+        counselors = User.query.filter_by(role='counselor', is_admin=False).all()
+        return render_template('teacher_refer.html', counselors=counselors)
+
+    counselor_id = request.form.get('counselor_id')
+    student_id = request.form.get('student_id')
+    first_name = request.form.get('first_name')
+    last_name = request.form.get('last_name')
+    year_level = request.form.get('year_level')
+    section = request.form.get('section')
+    department = request.form.get('department')
+    reason = request.form.get('reason')
+    purpose = request.form.get('purpose', '').strip()
+    
+    combined_purpose = f"{reason}: {purpose}" if purpose else reason
+    
+    # We'll create a special 'referral' appointment. 
+    # Since it's a referral, it doesn't have a fixed time yet, 
+    # but the system requires start_time/end_time/date.
+    # For now, we'll set it to a placeholder date (today) and mark it as 'pending'.
+    # Alternatively, we could let teachers pick a time, but usually referrals are handled by counselors later.
+    # Let's just set it to today at a placeholder time 00:00.
+    
+    appointment = Appointment(
+        counselor_id=counselor_id,
+        referred_by_id=current_user.id,
+        date=date.today(),
+        start_time=time(0, 0),
+        end_time=time(0, 30),
+        purpose=f"[REFERRAL by {current_user.full_name}] {combined_purpose}",
+        first_name=first_name,
+        last_name=last_name,
+        year_level=year_level,
+        section=section,
+        department=department,
+        guest_student_id=student_id,
+        is_guest=True,
+        status='pending'
+    )
+    db.session.add(appointment)
+    db.session.commit()
+    
+    flash('Student referral submitted successfully.', 'success')
+    return redirect(url_for('teacher_dashboard'))
 
 
 @app.route('/login', methods=['GET', 'POST'])
 def login():
     if current_user.is_authenticated:
         return redirect(url_for('index'))
-    counselor_access = session.get('counselor_access', False)
+    if not session.get('counselor_access', False):
+        flash('Counselor login is only available in counselor access mode. '
+              'Students can book an appointment without an account.', 'info')
+        return redirect(url_for('index'))
     if request.method == 'POST':
         username = request.form.get('username')
         password = request.form.get('password')
         user = User.query.filter_by(username=username).first()
-        if user and user.check_password(password):
-            if counselor_access and not user.is_counselor:
-                flash('This is counselor login mode. Use default mode for student login.', 'danger')
-                return redirect(url_for('login'))
-            if not counselor_access and user.is_counselor:
-                flash('Counselor login requires counselor access. Double-click the title.', 'danger')
-                return redirect(url_for('login'))
+        if user and (user.is_counselor or user.is_teacher) and user.check_password(password):
             login_user(user)
             next_page = request.args.get('next')
             flash(f'Welcome back, {user.full_name}!', 'success')
+            if user.is_counselor:
+                return redirect(next_page or url_for('counselor_dashboard'))
+            elif user.is_teacher:
+                return redirect(next_page or url_for('teacher_dashboard'))
             return redirect(next_page or url_for('index'))
         flash('Invalid username or password', 'danger')
-    return render_template('login.html', counselor_access=counselor_access)
+    return render_template('login.html')
 
 
 @app.route('/logout')
@@ -526,10 +676,22 @@ def counselor_dashboard():
         counselor_id=current_user.id
     ).filter(BlockedTime.date >= today).order_by(BlockedTime.date, BlockedTime.start_time).all()
 
+    counselor_accounts = None
+    teacher_accounts = None
+    if current_user.is_admin:
+        counselor_accounts = User.query.filter_by(
+            role='counselor', is_admin=False
+        ).order_by(User.full_name).all()
+        teacher_accounts = User.query.filter_by(
+            role='teacher'
+        ).order_by(User.full_name).all()
+
     return render_template('counselor_dashboard.html',
                            appointments=upcoming_appointments,
                            pending_appointments=pending_appointments,
-                           blocked_times=upcoming_blocked)
+                           blocked_times=upcoming_blocked,
+                           counselor_accounts=counselor_accounts,
+                           teacher_accounts=teacher_accounts)
 
 
 @app.route('/counselor/block_time', methods=['GET', 'POST'])
@@ -657,7 +819,7 @@ def student_dashboard():
     my_appointments = Appointment.query.filter_by(
         student_id=current_user.id
     ).order_by(Appointment.date.desc(), Appointment.start_time.desc()).all()
-    counselors = User.query.filter_by(role='counselor').all()
+    counselors = User.query.filter_by(role='counselor', is_admin=False).all()
     can_book = not student_has_active_appointment(current_user.id)
     return render_template('student_dashboard.html',
                            appointments=my_appointments,
@@ -817,7 +979,7 @@ def guest_has_active_appointment_hash(first_name, last_name, birthday_str):
 @app.route('/counselor/<int:counselor_id>/walkin', methods=['GET', 'POST'])
 def book_appointment_public(counselor_id):
     counselor = User.query.get_or_404(counselor_id)
-    if not counselor.is_counselor:
+    if not counselor.is_counselor or counselor.is_admin:
         abort(404)
 
     today = datetime.now().date()
@@ -860,11 +1022,13 @@ def book_appointment_public(counselor_id):
         birthday_str = request.form.get('birthday', '').strip()
         section = request.form.get('section', '').strip() or None
         year_level = request.form.get('year_level', '').strip() or None
+        department = request.form.get('department', '').strip() or None
         mood_rating = request.form.get('mood_rating', '').strip() or None
         mood_description = request.form.getlist('mood_description')
         mood_note = request.form.get('mood_note', '').strip()
         contact_email = request.form.get('contact_email', '').strip() or None
         contact_phone = request.form.get('contact_phone', '').strip() or None
+        student_id_val = request.form.get('student_id', '').strip() or None
 
         errors = []
         if not slot_key:
@@ -943,10 +1107,12 @@ def book_appointment_public(counselor_id):
             birthday=birthday_obj,
             section=section,
             year_level=year_level,
+            department=department,
             mood_rating=mood_rating,
             mood_description=mood_desc_joined,
             contact_email=contact_email,
             contact_phone=contact_phone,
+            guest_student_id=student_id_val,
             is_guest=True,
         )
         db.session.add(appointment)
@@ -989,8 +1155,8 @@ with app.app_context():
         student_id_nullable = next((c['nullable'] for c in inspector.get_columns('appointment') if c['name'] == 'student_id'), True)
         needs_rebuild = (not student_id_nullable) or any(col not in appt_columns for col, _ in [
             ('first_name', ''), ('middle_name', ''), ('last_name', ''), ('birthday', ''),
-            ('section', ''), ('year_level', ''), ('mood_rating', ''), ('mood_description', ''),
-            ('contact_email', ''), ('contact_phone', ''), ('is_guest', ''),
+            ('section', ''), ('year_level', ''), ('department', ''), ('mood_rating', ''), ('mood_description', ''),
+            ('contact_email', ''), ('contact_phone', ''), ('guest_student_id', ''), ('referred_by_id', ''), ('is_guest', ''),
         ])
 
         if needs_rebuild:
@@ -1019,8 +1185,11 @@ with app.app_context():
                 for col_name, col_type in [
                     ('first_name', 'VARCHAR(80)'), ('middle_name', 'VARCHAR(80)'), ('last_name', 'VARCHAR(80)'),
                     ('birthday', 'DATE'), ('section', 'VARCHAR(50)'), ('year_level', 'VARCHAR(50)'),
+                    ('department', 'VARCHAR(100)'),
                     ('mood_rating', 'VARCHAR(20)'), ('mood_description', 'VARCHAR(200)'),
                     ('contact_email', 'VARCHAR(120)'), ('contact_phone', 'VARCHAR(20)'),
+                    ('guest_student_id', 'VARCHAR(50)'),
+                    ('referred_by_id', 'INTEGER'),
                     ('is_guest', 'BOOLEAN DEFAULT 0'),
                 ]:
                     if col_name not in appt_columns:
@@ -1039,6 +1208,29 @@ with app.app_context():
         with db.engine.connect() as conn:
             conn.execute(db.text('ALTER TABLE user ADD COLUMN reset_token_expiry DATETIME'))
             conn.commit()
+    if 'is_admin' not in user_columns:
+        with db.engine.connect() as conn:
+            conn.execute(db.text('ALTER TABLE user ADD COLUMN is_admin BOOLEAN DEFAULT 0'))
+            conn.commit()
+        with db.engine.connect() as conn:
+            conn.execute(db.text('UPDATE user SET is_admin = 0 WHERE is_admin IS NULL'))
+            conn.commit()
+
+    admin_user = User.query.filter_by(username='admin').first()
+    if not admin_user:
+        admin_user = User(
+            username='admin',
+            email='admin@norzagaraycollege.edu.ph',
+            role='counselor',
+            full_name='Administrator',
+            is_admin=True
+        )
+        admin_user.set_password('admin123')
+        db.session.add(admin_user)
+        db.session.commit()
+    elif not admin_user.is_admin:
+        admin_user.is_admin = True
+        db.session.commit()
 
 
 @app.route('/forgot-password', methods=['GET', 'POST'])

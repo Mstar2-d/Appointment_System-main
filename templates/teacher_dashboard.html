@@ -1,0 +1,126 @@
+{% extends "base.html" %}
+
+{% block title %}Teacher Dashboard - Student Referral{% endblock %}
+
+{% block content %}
+<div class="section-label" style="margin-bottom: 0.75rem;">Teacher Dashboard</div>
+<h2 style="font-size: 2.25rem; margin-bottom: 2rem; border: none; padding: 0;">Student Referral</h2>
+
+{% set pending_referrals = referrals | selectattr('status', 'equalto', 'pending') | list %}
+
+<div class="tabs" data-tabs>
+    <button type="button" class="tab-link active" data-tab-target="tab-pending">
+        Pending Referrals{% if pending_referrals %} <span class="tab-count">{{ pending_referrals | length }}</span>{% endif %}
+    </button>
+    <button type="button" class="tab-link" data-tab-target="tab-all">All Referrals</button>
+</div>
+
+<!-- Pending Referrals (Home) -->
+<div id="tab-pending" class="tab-panel active">
+    <div class="card">
+        <div class="section-label" style="margin-bottom: 0.5rem;">Pending</div>
+        <h3 style="margin-bottom: 1.5rem; font-size: 1.4rem;">Referrals Awaiting Action</h3>
+
+        {% if pending_referrals %}
+            <div class="table-responsive">
+                <table class="table">
+                    <thead>
+                        <tr>
+                            <th>Student</th>
+                            <th>Counselor</th>
+                            <th>Reason</th>
+                            <th>Date Submitted</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        {% for ref in pending_referrals %}
+                            <tr>
+                                <td>
+                                    <div style="font-weight: 600;">{{ ref.display_name }}</div>
+                                    <div style="font-size: 0.75rem; color: var(--text-secondary);">
+                                        {{ ref.guest_student_id }} · {{ ref.year_level }}
+                                    </div>
+                                </td>
+                                <td style="font-size: 0.9rem;">{{ ref.counselor.full_name }}</td>
+                                <td style="font-size: 0.88rem;">
+                                    {{ ref.purpose.replace('[REFERRAL by ' + current_user.full_name + '] ', '') }}
+                                </td>
+                                <td style="font-size: 0.85rem; color: var(--text-secondary);">
+                                    {{ ref.date.strftime('%b %d, %Y') }}
+                                </td>
+                            </tr>
+                        {% endfor %}
+                    </tbody>
+                </table>
+            </div>
+        {% else %}
+            <div class="empty-state">
+                <p>No pending referrals.</p>
+                <p>You're all caught up.</p>
+            </div>
+        {% endif %}
+    </div>
+</div>
+
+<!-- All Referrals -->
+<div id="tab-all" class="tab-panel">
+    <div class="card">
+        <div class="section-label" style="margin-bottom: 0.5rem;">History</div>
+        <h3 style="margin-bottom: 1.5rem; font-size: 1.4rem;">Your Referrals</h3>
+
+        {% if referrals %}
+            <div class="table-responsive">
+                <table class="table">
+                    <thead>
+                        <tr>
+                            <th>Student</th>
+                            <th>Counselor</th>
+                            <th>Status</th>
+                            <th>Date Submitted</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        {% for ref in referrals %}
+                            <tr>
+                                <td>
+                                    <div style="font-weight: 600;">{{ ref.display_name }}</div>
+                                    <div style="font-size: 0.75rem; color: var(--text-secondary);">
+                                        {{ ref.guest_student_id }} · {{ ref.year_level }}
+                                    </div>
+                                </td>
+                                <td style="font-size: 0.9rem;">{{ ref.counselor.full_name }}</td>
+                                <td>
+                                    {% if ref.status == 'pending' %}
+                                        <span class="badge badge-pending">Pending</span>
+                                    {% elif ref.status == 'approved' %}
+                                        <span class="badge badge-approved">Approved</span>
+                                    {% elif ref.status == 'rejected' %}
+                                        <span class="badge badge-rejected">Rejected</span>
+                                    {% elif ref.status == 'completed' %}
+                                        <span class="badge badge-completed">Completed</span>
+                                    {% endif %}
+                                </td>
+                                <td style="font-size: 0.85rem; color: var(--text-secondary);">
+                                    {{ ref.date.strftime('%b %d, %Y') }}
+                                </td>
+                            </tr>
+                            <tr>
+                                <td colspan="4" style="padding-top: 0; padding-bottom: 1rem;">
+                                    <div style="background: var(--bg-secondary); padding: 0.75rem 1rem; border-radius: 8px; font-size: 0.88rem; color: var(--text-primary); border-left: 3px solid var(--accent-hover);">
+                                        <strong style="color: var(--text-tertiary); font-size: 0.75rem; text-transform: uppercase;">Reason:</strong><br>
+                                        {{ ref.purpose.replace('[REFERRAL by ' + current_user.full_name + '] ', '') }}
+                                    </div>
+                                </td>
+                            </tr>
+                        {% endfor %}
+                    </tbody>
+                </table>
+            </div>
+        {% else %}
+            <div class="empty-state">
+                <p>You haven't referred any students yet.</p>
+            </div>
+        {% endif %}
+    </div>
+</div>
+{% endblock %}

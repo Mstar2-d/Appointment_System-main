@@ -35,12 +35,22 @@
                         <span class="badge badge-pending">Pending Approval</span>
                     </div>
                 </div>
-                {% if appointment.year_level or appointment.section %}
+                {% if appointment.department or appointment.year_level or appointment.section %}
                     <div style="grid-column: 1 / -1;">
-                        <div style="font-size: 0.78rem; color: var(--text-tertiary); text-transform: uppercase; letter-spacing: 0.04em; margin-bottom: 0.25rem;">Year & Section</div>
+                        <div style="font-size: 0.78rem; color: var(--text-tertiary); text-transform: uppercase; letter-spacing: 0.04em; margin-bottom: 0.25rem;">Academic Info</div>
                         <div style="font-weight: 500; color: var(--text-primary);">
-                            {% if appointment.year_level %}{{ appointment.year_level }}{% endif %}{% if appointment.year_level and appointment.section %} · {% endif %}{% if appointment.section %}{{ appointment.section }}{% endif %}
+                            {% if appointment.department %}{{ appointment.department }}{% endif %}
+                            {% if appointment.department and (appointment.year_level or appointment.section) %} · {% endif %}
+                            {% if appointment.year_level %}{{ appointment.year_level }}{% endif %}
+                            {% if appointment.year_level and appointment.section %} · {% endif %}
+                            {% if appointment.section %}{{ appointment.section }}{% endif %}
                         </div>
+                    </div>
+                {% endif %}
+                {% if appointment.guest_student_id %}
+                    <div>
+                        <div style="font-size: 0.78rem; color: var(--text-tertiary); text-transform: uppercase; letter-spacing: 0.04em; margin-bottom: 0.25rem;">Student ID</div>
+                        <div style="font-weight: 600; color: var(--text-primary);">{{ appointment.guest_student_id }}</div>
                     </div>
                 {% endif %}
                 <div style="grid-column: 1 / -1;">

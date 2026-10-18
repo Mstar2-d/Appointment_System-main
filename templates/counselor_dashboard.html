@@ -3,189 +3,375 @@
 {% block title %}Counselor Dashboard{% endblock %}
 
 {% block content %}
-<div class="section-label" style="margin-bottom: 0.75rem;">Dashboard</div>
-<h2 style="font-size: 2.25rem; margin-bottom: 2.5rem; border: none; padding: 0;">Overview</h2>
+<!-- Account Overview Section (Hidden when adding accounts) -->
+<div id="accountOverview">
+    <div class="section-label" style="margin-bottom: 0.75rem;">Dashboard</div>
+    <h2 style="font-size: 2.25rem; margin-bottom: 2.5rem; border: none; padding: 0;">Overview</h2>
 
-<div class="stats-grid">
-    <div class="stat-card">
-        <div class="stat-number">{{ appointments|length }}</div>
-        <div class="stat-label">Upcoming Appointments</div>
-    </div>
-    <div class="stat-card">
-        <div class="stat-number">{{ pending_appointments|length }}</div>
-        <div class="stat-label">Pending Requests</div>
-    </div>
-    <div class="stat-card">
-        <div class="stat-number">{{ blocked_times|length }}</div>
-        <div class="stat-label">Days Blocked</div>
-    </div>
-    <div class="stat-card">
-        <div class="stat-number" style="font-size: 1.75rem; font-family: 'Inter', sans-serif;">09:00–17:00</div>
-        <div class="stat-label">Working Hours</div>
-    </div>
-</div>
-
-<div class="card">
-    <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 0.25rem; flex-wrap: wrap; gap: 0.75rem;">
-        <div>
-            <div class="section-label" style="margin-bottom: 0.5rem;">Schedule</div>
-            <h2 style="margin: 0; border: none; padding: 0; font-size: 1.6rem;">Upcoming Appointments</h2>
+    {% if not current_user.is_admin %}
+    <div class="stats-grid">
+        <div class="stat-card">
+            <div class="stat-number">{{ appointments|length }}</div>
+            <div class="stat-label">Upcoming Appointments</div>
         </div>
-        <div style="display: flex; gap: 0.6rem; flex-wrap: wrap;">
-            <form method="POST" action="{{ url_for('counselor_test_email') }}">
-                <button type="submit" class="btn btn-secondary" style="padding: 0.7rem 1.2rem; font-size: 0.85rem;">
-                    Send Test Email
-                </button>
-            </form>
-            <a href="{{ url_for('block_time') }}" class="btn btn-primary" style="padding: 0.7rem 1.2rem; font-size: 0.85rem;">
-                Block Unavailable Time
-            </a>
+        <div class="stat-card">
+            <div class="stat-number">{{ pending_appointments|length }}</div>
+            <div class="stat-label">Pending Requests</div>
+        </div>
+        <div class="stat-card">
+            <div class="stat-number">{{ blocked_times|length }}</div>
+            <div class="stat-label">Days Blocked</div>
+        </div>
+        <div class="stat-card">
+            <div class="stat-number" style="font-size: 1.75rem; font-family: 'Inter', sans-serif;">09:00–17:00</div>
+            <div class="stat-label">Working Hours</div>
         </div>
     </div>
 
-    {% if appointments %}
-        <div style="display: flex; flex-direction: column; gap: 1.25rem;">
-            {% for appt in appointments %}
-                <div style="border: 1px solid var(--border-light); border-radius: var(--radius-md); padding: 1.5rem 1.75rem; background: var(--bg-card); transition: all 0.3s ease;"
-                     onmouseover="this.style.borderColor='var(--border)'; this.style.boxShadow='0 10px 30px rgba(var(--shadow-rgb), 0.06)';"
-                     onmouseout="this.style.borderColor='var(--border-light)'; this.style.boxShadow='none';">
-                    <div style="display: flex; justify-content: space-between; align-items: flex-start; gap: 1.25rem; flex-wrap: wrap; margin-bottom: 1rem;">
-                        <div style="display: flex; align-items: center; gap: 1rem; flex-wrap: wrap;">
-                            <div style="padding: 0.5rem 0.9rem; background: var(--blue-soft); border-radius: var(--radius-sm);">
-                                <div style="font-size: 0.7rem; text-transform: uppercase; letter-spacing: 0.06em; color: var(--accent); font-weight: 600;">{{ appt.date.strftime('%a') }}</div>
-                                <div style="font-size: 1.2rem; font-weight: 700; color: var(--accent); font-family: 'Playfair Display', serif; line-height: 1;">{{ appt.date|fmt_short }}</div>
-                                <div style="font-size: 0.72rem; color: var(--text-secondary);">{{ appt.date.strftime('%Y') }}</div>
-                            </div>
-                            <div>
-                                <div style="display: flex; align-items: center; gap: 0.6rem; flex-wrap: wrap; margin-bottom: 0.25rem;">
-                                    <strong style="font-size: 1.05rem; color: var(--text-primary);">{{ appt.display_name }}</strong>
+    <div class="card">
+        <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 0.25rem; flex-wrap: wrap; gap: 0.75rem;">
+            <div>
+                <div class="section-label" style="margin-bottom: 0.5rem;">Schedule</div>
+                <h2 style="margin: 0; border: none; padding: 0; font-size: 1.6rem;">Upcoming Appointments</h2>
+            </div>
+            <div style="display: flex; gap: 0.6rem; flex-wrap: wrap;">
+                <form method="POST" action="{{ url_for('counselor_test_email') }}">
+                    <button type="submit" class="btn btn-secondary" style="padding: 0.7rem 1.2rem; font-size: 0.85rem;">
+                        Send Test Email
+                    </button>
+                </form>
+                <a href="{{ url_for('block_time') }}" class="btn btn-primary" style="padding: 0.7rem 1.2rem; font-size: 0.85rem;">
+                    Block Unavailable Time
+                </a>
+            </div>
+        </div>
+
+        {% if appointments %}
+            <div style="display: flex; flex-direction: column; gap: 1.25rem;">
+                {% for appt in appointments %}
+                    <div style="border: 1px solid var(--border-light); border-radius: var(--radius-md); padding: 1.5rem 1.75rem; background: var(--bg-card); transition: all 0.3s ease;"
+                         onmouseover="this.style.borderColor='var(--border)'; this.style.boxShadow='0 10px 30px rgba(var(--shadow-rgb), 0.06)';"
+                         onmouseout="this.style.borderColor='var(--border-light)'; this.style.boxShadow='none';">
+                        <div style="display: flex; justify-content: space-between; align-items: flex-start; gap: 1.25rem; flex-wrap: wrap; margin-bottom: 1rem;">
+                            <div style="display: flex; align-items: center; gap: 1rem; flex-wrap: wrap;">
+                                <div style="padding: 0.5rem 0.9rem; background: var(--blue-soft); border-radius: var(--radius-sm);">
+                                    <div style="font-size: 0.7rem; text-transform: uppercase; letter-spacing: 0.06em; color: var(--accent); font-weight: 600;">{{ appt.date.strftime('%a') }}</div>
+                                    <div style="font-size: 1.2rem; font-weight: 700; color: var(--accent); font-family: 'Playfair Display', serif; line-height: 1;">{{ appt.date|fmt_short }}</div>
+                                    <div style="font-size: 0.72rem; color: var(--text-secondary);">{{ appt.date.strftime('%Y') }}</div>
+                                </div>
+                                <div>
+                                    <div style="display: flex; align-items: center; gap: 0.6rem; flex-wrap: wrap; margin-bottom: 0.25rem;">
+                                        <strong style="font-size: 1.05rem; color: var(--text-primary);">{{ appt.display_name }}</strong>
+                                        {% if appt.is_guest %}
+                                            <span class="badge badge-warning" style="font-size: 0.68rem; padding: 0.25rem 0.55rem;">Walk-in</span>
+                                        {% else %}
+                                            <span class="badge badge-info" style="font-size: 0.68rem; padding: 0.25rem 0.55rem;">Registered</span>
+                                        {% endif %}
+                                        <span style="font-size: 0.88rem; color: var(--text-secondary); font-weight: 500;">· {{ appt.time_str }}</span>
+                                    </div>
                                     {% if appt.is_guest %}
-                                        <span class="badge badge-warning" style="font-size: 0.68rem; padding: 0.25rem 0.55rem;">Walk-in</span>
-                                    {% else %}
-                                        <span class="badge badge-info" style="font-size: 0.68rem; padding: 0.25rem 0.55rem;">Registered</span>
+                                        {% if appt.guest_student_id %}
+                                            <div style="font-size: 0.82rem; color: var(--text-secondary);">Student ID: {{ appt.guest_student_id }}</div>
+                                        {% endif %}
+                                    {% elif appt.student and appt.student.student_id %}
+                                        <div style="font-size: 0.82rem; color: var(--text-secondary);">Student ID: {{ appt.student.student_id }}</div>
                                     {% endif %}
-                                    <span style="font-size: 0.88rem; color: var(--text-secondary); font-weight: 500;">· {{ appt.time_str }}</span>
+                                    {% if appt.is_guest and (appt.year_level or appt.section or appt.department) %}
+                                        <div style="font-size: 0.82rem; color: var(--text-secondary);">
+                                            {% if appt.department %}{{ appt.department }}{% endif %}
+                                            {% if appt.department and (appt.year_level or appt.section) %} · {% endif %}
+                                            {% if appt.year_level %}{{ appt.year_level }}{% endif %}
+                                            {% if appt.year_level and appt.section %} · {% endif %}
+                                            {% if appt.section %}Section: {{ appt.section }}{% endif %}
+                                        </div>
+                                    {% endif %}
+                                    {% if appt.is_guest and appt.birthday %}
+                                        <div style="font-size: 0.82rem; color: var(--text-secondary);">Birthday: {{ appt.birthday|fmt_long }}</div>
+                                    {% endif %}
+                                    {% if appt.is_guest and (appt.contact_email or appt.contact_phone) %}
+                                        <div style="font-size: 0.82rem; color: var(--text-secondary);">
+                                            {% if appt.contact_email %}✉ {{ appt.contact_email }}{% endif %}{% if appt.contact_email and appt.contact_phone %} · {% endif %}{% if appt.contact_phone %}☎ {{ appt.contact_phone }}{% endif %}
+                                        </div>
+                                    {% endif %}
                                 </div>
-                                {% if not appt.is_guest and appt.student and appt.student.student_id %}
-                                    <div style="font-size: 0.82rem; color: var(--text-secondary);">Student ID: {{ appt.student.student_id }}</div>
+                            </div>
+                            <div style="display: flex; align-items: center; gap: 0.6rem; flex-wrap: wrap;">
+                                {% if appt.status == 'pending' %}
+                                    <span class="badge badge-pending">Pending</span>
+                                {% elif appt.status == 'approved' %}
+                                    <span class="badge badge-approved">Approved</span>
+                                {% elif appt.status == 'rejected' %}
+                                    <span class="badge badge-rejected">Rejected</span>
+                                {% elif appt.status == 'completed' %}
+                                    <span class="badge badge-completed">Completed</span>
                                 {% endif %}
-                                {% if appt.is_guest and (appt.year_level or appt.section) %}
-                                    <div style="font-size: 0.82rem; color: var(--text-secondary);">
-                                        {% if appt.year_level %}{{ appt.year_level }}{% endif %}{% if appt.year_level and appt.section %} · {% endif %}{% if appt.section %}Section: {{ appt.section }}{% endif %}
+                                <span style="font-family: 'Inter', monospace; font-size: 0.78rem; color: var(--text-tertiary); background: var(--bg-secondary); padding: 0.25rem 0.55rem; border-radius: 8px;">#{{ '%06d'|format(appt.id) }}</span>
+                            </div>
+                        </div>
+
+                        {% if appt.referred_by_id %}
+                            <div style="background: var(--blue-soft); border-left: 3px solid var(--accent); padding: 0.85rem 1rem; border-radius: var(--radius-sm); margin-bottom: 1rem;">
+                                <div style="font-size: 0.78rem; color: var(--accent); text-transform: uppercase; letter-spacing: 0.04em; font-weight: 600; margin-bottom: 0.35rem;">Teacher Referral</div>
+                                <div style="font-size: 0.88rem;">
+                                    <span style="font-weight: 600; color: var(--accent);">Referred by:</span>
+                                    <span style="color: var(--text-primary); margin-left: 0.35rem;">{{ appt.referred_by.full_name }} ({{ appt.referred_by.specialty if appt.referred_by.specialty else 'No Dept' }})</span>
+                                </div>
+                            </div>
+                        {% endif %}
+
+                        {% if appt.is_guest and (appt.mood_rating or appt.mood_description) %}
+                            <div style="background: var(--yellow-soft); border-left: 3px solid var(--gold); padding: 0.85rem 1rem; border-radius: var(--radius-sm); margin-bottom: 1rem;">
+                                <div style="font-size: 0.78rem; color: var(--accent-hover); text-transform: uppercase; letter-spacing: 0.04em; font-weight: 600; margin-bottom: 0.35rem;">Pre-session check-in</div>
+                                {% if appt.mood_rating %}
+                                    <div style="font-size: 0.88rem; margin-bottom: 0.2rem;">
+                                        <span style="font-weight: 600; color: var(--accent-hover);">Mood:</span>
+                                        <span style="color: var(--text-primary); text-transform: capitalize; margin-left: 0.35rem;">{{ appt.mood_rating.replace('_', ' ') }}</span>
                                     </div>
                                 {% endif %}
-                                {% if appt.is_guest and appt.birthday %}
-                                    <div style="font-size: 0.82rem; color: var(--text-secondary);">Birthday: {{ appt.birthday|fmt_long }}</div>
-                                {% endif %}
-                                {% if appt.is_guest and (appt.contact_email or appt.contact_phone) %}
-                                    <div style="font-size: 0.82rem; color: var(--text-secondary);">
-                                        {% if appt.contact_email %}✉ {{ appt.contact_email }}{% endif %}{% if appt.contact_email and appt.contact_phone %} · {% endif %}{% if appt.contact_phone %}☎ {{ appt.contact_phone }}{% endif %}
+                                {% if appt.mood_description %}
+                                    <div style="font-size: 0.88rem;">
+                                        <span style="font-weight: 600; color: var(--accent-hover);">Concerns:</span>
+                                        <span style="color: var(--text-primary); margin-left: 0.35rem;">{{ appt.mood_description }}</span>
                                     </div>
                                 {% endif %}
                             </div>
-                        </div>
-                        <div style="display: flex; align-items: center; gap: 0.6rem; flex-wrap: wrap;">
-                            {% if appt.status == 'pending' %}
-                                <span class="badge badge-pending">Pending</span>
-                            {% elif appt.status == 'approved' %}
-                                <span class="badge badge-approved">Approved</span>
-                            {% elif appt.status == 'rejected' %}
-                                <span class="badge badge-rejected">Rejected</span>
-                            {% elif appt.status == 'completed' %}
-                                <span class="badge badge-completed">Completed</span>
-                            {% endif %}
-                            <span style="font-family: 'Inter', monospace; font-size: 0.78rem; color: var(--text-tertiary); background: var(--bg-secondary); padding: 0.25rem 0.55rem; border-radius: 8px;">#{{ '%06d'|format(appt.id) }}</span>
-                        </div>
-                    </div>
-
-                    {% if appt.is_guest and (appt.mood_rating or appt.mood_description) %}
-                        <div style="background: var(--yellow-soft); border-left: 3px solid var(--gold); padding: 0.85rem 1rem; border-radius: var(--radius-sm); margin-bottom: 1rem;">
-                            <div style="font-size: 0.78rem; color: var(--accent-hover); text-transform: uppercase; letter-spacing: 0.04em; font-weight: 600; margin-bottom: 0.35rem;">Pre-session check-in</div>
-                            {% if appt.mood_rating %}
-                                <div style="font-size: 0.88rem; margin-bottom: 0.2rem;">
-                                    <span style="font-weight: 600; color: var(--accent-hover);">Mood:</span>
-                                    <span style="color: var(--text-primary); text-transform: capitalize; margin-left: 0.35rem;">{{ appt.mood_rating.replace('_', ' ') }}</span>
-                                </div>
-                            {% endif %}
-                            {% if appt.mood_description %}
-                                <div style="font-size: 0.88rem;">
-                                    <span style="font-weight: 600; color: var(--accent-hover);">Concerns:</span>
-                                    <span style="color: var(--text-primary); margin-left: 0.35rem;">{{ appt.mood_description }}</span>
-                                </div>
-                            {% endif %}
-                        </div>
-                    {% endif %}
-
-                    <div style="background: var(--bg-secondary); border-radius: var(--radius-sm); padding: 1rem 1.1rem; margin-bottom: 1rem;">
-                        <div style="font-size: 0.78rem; color: var(--text-tertiary); text-transform: uppercase; letter-spacing: 0.04em; font-weight: 600; margin-bottom: 0.4rem;">Purpose / Concern</div>
-                        <div style="color: var(--text-primary); font-size: 0.92rem; line-height: 1.6; white-space: pre-wrap;">{{ appt.purpose }}</div>
-                    </div>
-
-                    <div class="action-btns">
-                        {% if appt.status == 'pending' %}
-                            <form method="POST" action="{{ url_for('update_appointment', appointment_id=appt.id, action='approve') }}">
-                                <button type="submit" class="btn btn-success" style="padding: 0.55rem 1.1rem; font-size: 0.85rem;">✓ Approve</button>
-                            </form>
-                            <form method="POST" action="{{ url_for('update_appointment', appointment_id=appt.id, action='reject') }}">
-                                <button type="submit" class="btn btn-danger" style="padding: 0.55rem 1.1rem; font-size: 0.85rem;">✕ Reject</button>
-                            </form>
-                        {% elif appt.status == 'approved' %}
-                            <form method="POST" action="{{ url_for('update_appointment', appointment_id=appt.id, action='complete') }}">
-                                <button type="submit" class="btn btn-info" style="padding: 0.55rem 1.1rem; font-size: 0.85rem;">✓ Mark Complete</button>
-                            </form>
                         {% endif %}
-                    </div>
-                </div>
-            {% endfor %}
-        </div>
-    {% else %}
-        <div class="empty-state">
-            <p>No upcoming appointments.</p>
-            <p style="margin-top: 0.5rem; font-size: 0.95rem;">Students can book you anytime between 09:00 – 17:00. Use "Block Time" to mark yourself unavailable.</p>
-        </div>
-    {% endif %}
-</div>
 
-<div class="card">
-    <div class="section-label" style="margin-bottom: 0.5rem;">Availability</div>
-    <h2 style="border: none; padding: 0; margin: 0 0 0.25rem 0; font-size: 1.6rem;">Blocked / Unavailable Times</h2>
-    {% if blocked_times %}
-        <div class="table-responsive">
-            <table class="table">
-                <thead>
-                    <tr>
-                        <th>Date</th>
-                        <th>Time</th>
-                        <th>Reason</th>
-                        <th>Actions</th>
-                    </tr>
-                </thead>
-                <tbody>
-                    {% for bt in blocked_times %}
-                        <tr>
-                            <td style="font-weight: 500;">{{ bt.date.strftime('%b %d, %Y') }}</td>
-                            <td>
-                                {% if bt.is_full_day %}
-                                    <span class="badge badge-rejected">Full Day</span>
-                                {% else %}
-                                    {{ bt.time_str }}
-                                {% endif %}
-                            </td>
-                            <td style="color: var(--text-secondary);">{{ bt.reason if bt.reason else '—' }}</td>
-                            <td>
-                                <form method="POST" action="{{ url_for('delete_blocked', blocked_id=bt.id) }}" onsubmit="return confirm('Remove this blocked time?');">
-                                    <button type="submit" class="btn btn-danger" style="padding: 0.5rem 0.95rem; font-size: 0.82rem;">Remove</button>
+                        <div style="background: var(--bg-secondary); border-radius: var(--radius-sm); padding: 1rem 1.1rem; margin-bottom: 1rem;">
+                            <div style="font-size: 0.78rem; color: var(--text-tertiary); text-transform: uppercase; letter-spacing: 0.04em; font-weight: 600; margin-bottom: 0.4rem;">Purpose / Concern</div>
+                            <div style="color: var(--text-primary); font-size: 0.92rem; line-height: 1.6; white-space: pre-wrap;">{{ appt.purpose }}</div>
+                        </div>
+
+                        <div class="action-btns">
+                            {% if appt.status == 'pending' %}
+                                <form method="POST" action="{{ url_for('update_appointment', appointment_id=appt.id, action='approve') }}">
+                                    <button type="submit" class="btn btn-success" style="padding: 0.55rem 1.1rem; font-size: 0.85rem;">✓ Approve</button>
                                 </form>
-                            </td>
+                                <form method="POST" action="{{ url_for('update_appointment', appointment_id=appt.id, action='reject') }}">
+                                    <button type="submit" class="btn btn-danger" style="padding: 0.55rem 1.1rem; font-size: 0.85rem;">✕ Reject</button>
+                                </form>
+                            {% elif appt.status == 'approved' %}
+                                <form method="POST" action="{{ url_for('update_appointment', appointment_id=appt.id, action='complete') }}">
+                                    <button type="submit" class="btn btn-info" style="padding: 0.55rem 1.1rem; font-size: 0.85rem;">✓ Mark Complete</button>
+                                </form>
+                            {% endif %}
+                        </div>
+                    </div>
+                {% endfor %}
+            </div>
+        {% else %}
+            <div class="empty-state">
+                <p>No upcoming appointments.</p>
+                <p style="margin-top: 0.5rem; font-size: 0.95rem;">Students can book you anytime between 09:00 – 17:00. Use "Block Time" to mark yourself unavailable.</p>
+            </div>
+        {% endif %}
+    </div>
+
+    <div class="card">
+        <div class="section-label" style="margin-bottom: 0.5rem;">Availability</div>
+        <h2 style="border: none; padding: 0; margin: 0 0 0.25rem 0; font-size: 1.6rem;">Blocked / Unavailable Times</h2>
+        {% if blocked_times %}
+            <div class="table-responsive">
+                <table class="table">
+                    <thead>
+                        <tr>
+                            <th>Date</th>
+                            <th>Time</th>
+                            <th>Reason</th>
+                            <th>Actions</th>
                         </tr>
-                    {% endfor %}
-                </tbody>
-            </table>
-        </div>
-    {% else %}
-        <div class="empty-state">
-            <p>No blocked times. You are fully available during working hours (09:00–17:00).</p>
-        </div>
+                    </thead>
+                    <tbody>
+                        {% for bt in blocked_times %}
+                            <tr>
+                                <td style="font-weight: 500;">{{ bt.date.strftime('%b %d, %Y') }}</td>
+                                <td>
+                                    {% if bt.is_full_day %}
+                                        <span class="badge badge-rejected">Full Day</span>
+                                    {% else %}
+                                        {{ bt.time_str }}
+                                    {% endif %}
+                                </td>
+                                <td style="color: var(--text-secondary);">{{ bt.reason if bt.reason else '—' }}</td>
+                                <td>
+                                    <form method="POST" action="{{ url_for('delete_blocked', blocked_id=bt.id) }}" onsubmit="return confirm('Remove this blocked time?');">
+                                        <button type="submit" class="btn btn-danger" style="padding: 0.5rem 0.95rem; font-size: 0.82rem;">Remove</button>
+                                    </form>
+                                </td>
+                            </tr>
+                        {% endfor %}
+                    </tbody>
+                </table>
+            </div>
+        {% else %}
+            <div class="empty-state">
+                <p>No blocked times. You are fully available during working hours (09:00–17:00).</p>
+            </div>
+        {% endif %}
+    </div>
     {% endif %}
+
+    {% if current_user.is_admin %}
+    <div class="card">
+        <div class="section-label" style="margin-bottom: 0.5rem;">Team</div>
+        <h2 style="border: none; padding: 0; margin: 0 0 0.25rem 0; font-size: 1.6rem;">Counselor Accounts</h2>
+        <p style="color: var(--text-secondary); margin-bottom: 1.5rem; font-size: 0.92rem;">
+            Overview of all registered counselor accounts.
+        </p>
+        {% if counselor_accounts %}
+            <div class="table-responsive">
+                <table class="table">
+                    <thead>
+                        <tr>
+                            <th>Name</th>
+                            <th>Username</th>
+                            <th>Email</th>
+                            <th>Phone</th>
+                            <th>Specialty</th>
+                            <th>Actions</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        {% for account in counselor_accounts %}
+                            <tr>
+                                <td style="font-weight: 600;">{{ account.full_name }}</td>
+                                <td>{{ account.username }}</td>
+                                <td style="color: var(--text-secondary);">{{ account.email }}</td>
+                                <td style="color: var(--text-secondary);">{{ account.phone if account.phone else '—' }}</td>
+                                <td style="color: var(--text-secondary);">{{ account.specialty if account.specialty else '—' }}</td>
+                                <td>
+                                    <form method="POST" action="{{ url_for('delete_counselor', user_id=account.id) }}" onsubmit="return confirm('Are you sure you want to delete this counselor account? All their appointments and blocked times will also be removed.');">
+                                        <button type="submit" class="btn btn-danger" style="padding: 0.5rem 0.95rem; font-size: 0.82rem;">Delete</button>
+                                    </form>
+                                </td>
+                            </tr>
+                        {% endfor %}
+                    </tbody>
+                </table>
+            </div>
+        {% else %}
+            <div class="empty-state">
+                <p>No counselor accounts yet.</p>
+            </div>
+        {% endif %}
+    </div>
+
+    <div class="card">
+        <div class="section-label" style="margin-bottom: 0.5rem;">Team</div>
+        <h2 style="border: none; padding: 0; margin: 0 0 0.25rem 0; font-size: 1.6rem;">Teacher Accounts</h2>
+        <p style="color: var(--text-secondary); margin-bottom: 1.5rem; font-size: 0.92rem;">
+            Overview of all registered teacher accounts.
+        </p>
+        {% if teacher_accounts %}
+            <div class="table-responsive">
+                <table class="table">
+                    <thead>
+                        <tr>
+                            <th>Name</th>
+                            <th>Username</th>
+                            <th>Email</th>
+                            <th>Phone</th>
+                            <th>Department</th>
+                            <th>Actions</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        {% for account in teacher_accounts %}
+                            <tr>
+                                <td style="font-weight: 600;">{{ account.full_name }}</td>
+                                <td>{{ account.username }}</td>
+                                <td style="color: var(--text-secondary);">{{ account.email }}</td>
+                                <td style="color: var(--text-secondary);">{{ account.phone if account.phone else '—' }}</td>
+                                <td style="color: var(--text-secondary);">{{ account.specialty if account.specialty else '—' }}</td>
+                                <td>
+                                    <form method="POST" action="{{ url_for('delete_teacher', user_id=account.id) }}" onsubmit="return confirm('Are you sure you want to delete this teacher account? All their referrals will also be removed.');">
+                                        <button type="submit" class="btn btn-danger" style="padding: 0.5rem 0.95rem; font-size: 0.82rem;">Delete</button>
+                                    </form>
+                                </td>
+                            </tr>
+                        {% endfor %}
+                    </tbody>
+                </table>
+            </div>
+        {% else %}
+            <div class="empty-state">
+                <p>No teacher accounts yet.</p>
+            </div>
+        {% endif %}
+    </div>
+    {% endif %}
+</div> <!-- End of accountOverview -->
+
+<!-- Add Staff Account Section (Hidden by default, shown when hash is #addAccount) -->
+{% if current_user.is_admin %}
+<div class="card" id="addAccountCard" style="display: none;">
+    <div class="section-label" style="margin-bottom: 0.5rem;">Team</div>
+    <h2 style="border: none; padding: 0; margin: 0 0 0.25rem 0; font-size: 1.6rem;">Add Staff Account</h2>
+
+    <div style="display: flex; gap: 2rem; margin-top: 1.5rem;">
+        <div style="flex: 1; border-right: 1px solid var(--border-light); padding-right: 2rem;">
+            <h3 style="font-size: 1.1rem; margin-bottom: 1rem;">Add Counselor</h3>
+            <form method="POST" action="{{ url_for('create_counselor') }}">
+                <div class="form-group">
+                    <label for="full_name">Full Name</label>
+                    <input type="text" id="full_name" name="full_name" required placeholder="Enter full name">
+                </div>
+                <div class="form-group">
+                    <label for="username">Username</label>
+                    <input type="text" id="username" name="username" required placeholder="Enter username">
+                </div>
+                <div class="form-group">
+                    <label for="email">Email</label>
+                    <input type="email" id="email" name="email" required placeholder="Enter email">
+                </div>
+                <div class="form-group">
+                    <label for="phone">Phone Number</label>
+                    <input type="tel" id="phone" name="phone" required placeholder="09XX XXX XXXX" maxlength="20">
+                </div>
+                <div class="form-group">
+                    <label for="password">Password</label>
+                    <input type="password" id="password" name="password" required minlength="8">
+                </div>
+                <button type="submit" class="btn btn-primary">Create Counselor</button>
+            </form>
+        </div>
+
+        <div style="flex: 1;">
+            <h3 style="font-size: 1.1rem; margin-bottom: 1rem;">Add Teacher</h3>
+            <form method="POST" action="{{ url_for('create_teacher') }}">
+                <div class="form-group">
+                    <label for="t_full_name">Full Name</label>
+                    <input type="text" id="t_full_name" name="full_name" required placeholder="Enter full name">
+                </div>
+                <div class="form-group">
+                    <label for="t_username">Username</label>
+                    <input type="text" id="t_username" name="username" required placeholder="Enter username">
+                </div>
+                <div class="form-group">
+                    <label for="t_email">Email</label>
+                    <input type="email" id="t_email" name="email" required placeholder="Enter email">
+                </div>
+                <div class="form-group">
+                    <label for="t_phone">Phone Number</label>
+                    <input type="tel" id="t_phone" name="phone" required placeholder="09XX XXX XXXX" maxlength="20">
+                </div>
+                <div class="form-group">
+                    <label for="t_dept">Department</label>
+                    <select id="t_dept" name="department" required>
+                        <option value="">— Select Department —</option>
+                        <option value="Computer Science">Computer Science</option>
+                        <option value="College of Education">College of Education</option>
+                        <option value="Hospitality Management">Hospitality Management</option>
+                    </select>
+                </div>
+                <div class="form-group">
+                    <label for="t_password">Password</label>
+                    <input type="password" id="t_password" name="password" required minlength="8">
+                </div>
+                <button type="submit" class="btn btn-primary">Create Teacher</button>
+            </form>
+        </div>
+    </div>
 </div>
+{% endif %}
 {% endblock %}

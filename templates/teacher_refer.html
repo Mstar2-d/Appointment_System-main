@@ -1,0 +1,95 @@
+{% extends "base.html" %}
+
+{% block title %}Refer a Student - Teacher Dashboard{% endblock %}
+
+{% block content %}
+<div class="section-label" style="margin-bottom: 0.75rem;">Teacher Dashboard</div>
+<h2 style="font-size: 2.25rem; margin-bottom: 2rem; border: none; padding: 0;">Refer a Student</h2>
+
+<div class="card">
+    <div class="section-label" style="margin-bottom: 0.5rem;">New Referral</div>
+    <h3 style="margin-bottom: 1.5rem; font-size: 1.4rem;">Refer a Student</h3>
+
+    <form method="POST" action="{{ url_for('teacher_refer') }}">
+        <div class="form-group">
+            <label for="counselor_id">Assign to Counselor</label>
+            <select id="counselor_id" name="counselor_id" required>
+                <option value="">— Select Counselor —</option>
+                {% for c in counselors %}
+                    <option value="{{ c.id }}">{{ c.full_name }} ({{ c.specialty if c.specialty else 'General' }})</option>
+                {% endfor %}
+            </select>
+        </div>
+
+        <div class="form-row">
+            <div class="form-group">
+                <label for="first_name">Student First Name</label>
+                <input type="text" id="first_name" name="first_name" required placeholder="Enter first name">
+            </div>
+            <div class="form-group">
+                <label for="last_name">Student Last Name</label>
+                <input type="text" id="last_name" name="last_name" required placeholder="Enter last name">
+            </div>
+        </div>
+
+        <div class="form-group">
+            <label for="student_id">Student ID</label>
+            <input type="text" id="student_id" name="student_id" placeholder="e.g. 2025-0000">
+        </div>
+
+        <div class="form-row">
+            <div class="form-group">
+                <label for="year_level">Year Level</label>
+                <select id="year_level" name="year_level" required>
+                    <option value="">— Select —</option>
+                    <option value="1st yr">1st yr</option>
+                    <option value="2nd yr">2nd yr</option>
+                    <option value="3rd yr">3rd yr</option>
+                    <option value="4th yr">4th yr</option>
+                </select>
+            </div>
+            <div class="form-group">
+                <label for="section">Section</label>
+                <input type="text" id="section" name="section" placeholder="e.g. Mahogany, BSCS-3B">
+            </div>
+        </div>
+
+        <div class="form-group">
+            <label for="department">Department</label>
+            <select id="department" name="department" required>
+                <option value="">— Select Department —</option>
+                <option value="Computer Science">Computer Science</option>
+                <option value="College of Education">College of Education</option>
+                <option value="Hospitality Management">Hospitality Management</option>
+            </select>
+        </div>
+
+        <div class="form-group">
+            <label for="reason">Reason for Referral</label>
+            <select id="reason" name="reason" required>
+                <option value="">— Select Reason —</option>
+                <option value="Poor Academic Performance">Poor Academic Performance</option>
+                <option value="Frequent Absenses/Tardiness">Frequent Absenses/Tardiness</option>
+                <option value="Lack of Participation">Lack of Participation</option>
+                <option value="Behavioral Problem">Behavioral Problem</option>
+                <option value="Emotional Concern">Emotional Concern</option>
+                <option value="Conflict with Classmates">Conflict with Classmates</option>
+                <option value="Family-related Concern">Family-related Concern</option>
+                <option value="Sudden Change in Behavior">Sudden Change in Behavior</option>
+                <option value="Low Motivation">Low Motivation</option>
+                <option value="Stress/Anxiety">Stress/Anxiety</option>
+                <option value="Others">Others</option>
+            </select>
+        </div>
+
+        <div class="form-group">
+            <label for="purpose">Additional Details (Optional)</label>
+            <textarea id="purpose" name="purpose" rows="3" placeholder="Provide more context or specific observations..."></textarea>
+        </div>
+
+        <button type="submit" class="btn btn-primary" style="width: 100%; justify-content: center; padding: 1rem;">
+            Submit Referral
+        </button>
+    </form>
+</div>
+{% endblock %}
