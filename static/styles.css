@@ -652,15 +652,15 @@ button:focus-visible,
 
 /* ---------- Auth ---------- */
 .auth-container {
-    max-width: 520px;
-    margin: 3.5rem auto;
+    max-width: 500px;
+    margin: 1.5rem auto;
     padding: 0 2rem;
 }
 
 .auth-card {
     background: var(--bg-card);
     border-radius: var(--radius-xl);
-    padding: 3rem 2.75rem;
+    padding: 2.25rem 2.5rem;
     border: 1px solid var(--border-light);
     border-top: 6px solid var(--yellow);
     box-shadow: 0 30px 80px rgba(var(--shadow-rgb), 0.12);

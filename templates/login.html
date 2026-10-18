@@ -3,13 +3,20 @@
 {% block title %}Counselor Login{% endblock %}
 
 {% block content %}
+<style>
+    /* Reduce container padding for login page to avoid scrolling */
+    .container {
+        padding-top: 1.5rem !important;
+        padding-bottom: 1.5rem !important;
+    }
+</style>
 <div class="auth-container">
     <div class="auth-card">
-        <h2>Counselor Login</h2>
-        <div class="mode-banner">
+        <h2 style="margin-bottom: 1.25rem;">Counselor Login</h2>
+        <div class="mode-banner" style="margin-bottom: 1.25rem;">
             Counselor Login Mode Active
         </div>
-        <p style="text-align: center; color: var(--text-secondary); margin-bottom: 2rem; font-size: 0.95rem;">
+        <p style="text-align: center; color: var(--text-secondary); margin-bottom: 1.5rem; font-size: 0.9rem;">
             Welcome back. Please enter your credentials to continue.
         </p>
         <form method="POST" action="{{ url_for('login') }}">
@@ -25,7 +32,7 @@
                 Counselor Login
             </button>
         </form>
-        <div class="auth-link" style="margin-top: 1.25rem;">
+        <div class="auth-link" style="margin-top: 1rem;">
             <p><a href="{{ url_for('forgot_password') }}">Forgot Password?</a></p>
         </div>
     </div>

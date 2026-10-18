@@ -245,7 +245,7 @@ class BlockedTime(db.Model):
     def time_str(self):
         if self.is_full_day:
             return "Full Day"
-        return f"{self.start_time.strftime('%H:%M')} - {self.end_time.strftime('%H:%M')}"
+        return f"{self.start_time.strftime('%I:%M %p')} - {self.end_time.strftime('%I:%M %p')}"
 
 
 class Appointment(db.Model):
@@ -283,7 +283,7 @@ class Appointment(db.Model):
 
     @property
     def time_str(self):
-        return f"{self.start_time.strftime('%H:%M')} - {self.end_time.strftime('%H:%M')}"
+        return f"{self.start_time.strftime('%I:%M %p')} - {self.end_time.strftime('%I:%M %p')}"
 
     @property
     def guest_full_name(self):
@@ -347,7 +347,7 @@ def generate_available_slots(counselor_id, date, slot_minutes=DEFAULT_SLOT_MINUT
             'end': slot_end_t,
             'start_str': slot_start_t.strftime('%H:%M'),
             'end_str': slot_end_t.strftime('%H:%M'),
-            'label': f"{slot_start_t.strftime('%H:%M')} - {slot_end_t.strftime('%H:%M')}",
+            'label': f"{slot_start_t.strftime('%I:%M %p')} - {slot_end_t.strftime('%I:%M %p')}",
             'key': f"{slot_start_t.strftime('%H%M')}_{slot_end_t.strftime('%H%M')}"
         })
         current = slot_end
@@ -377,8 +377,18 @@ def fmt_date_short(value):
         return str(value)
 
 
+def fmt_time(value):
+    if value is None:
+        return ''
+    try:
+        return value.strftime('%I:%M %p')
+    except Exception:
+        return str(value)
+
+
 app.jinja_env.filters['fmt_long'] = fmt_date_long
 app.jinja_env.filters['fmt_short'] = fmt_date_short
+app.jinja_env.filters['fmt_time'] = fmt_time
 
 
 @app.route('/')
@@ -931,8 +941,8 @@ def book_appointment(counselor_id):
                            calendar=calendar,
                            view_month=view_month,
                            weekday_names=WEEKDAY_NAMES,
-                           default_start=DEFAULT_WORK_START.strftime('%H:%M'),
-                           default_end=DEFAULT_WORK_END.strftime('%H:%M'))
+                           default_start=DEFAULT_WORK_START.strftime('%I:%M %p'),
+                           default_end=DEFAULT_WORK_END.strftime('%I:%M %p'))
 
 
 MOOD_OPTIONS = [
@@ -1130,8 +1140,8 @@ def book_appointment_public(counselor_id):
                            calendar=calendar,
                            view_month=view_month,
                            weekday_names=WEEKDAY_NAMES,
-                           default_start=DEFAULT_WORK_START.strftime('%H:%M'),
-                           default_end=DEFAULT_WORK_END.strftime('%H:%M'),
+                           default_start=DEFAULT_WORK_START.strftime('%I:%M %p'),
+                           default_end=DEFAULT_WORK_END.strftime('%I:%M %p'),
                            mood_options=MOOD_OPTIONS,
                            feeling_options=FEELING_OPTIONS)
 
