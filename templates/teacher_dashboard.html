@@ -110,6 +110,12 @@
                                         <strong style="color: var(--text-tertiary); font-size: 0.75rem; text-transform: uppercase;">Reason:</strong><br>
                                         {{ ref.purpose.replace('[REFERRAL by ' + current_user.full_name + '] ', '') }}
                                     </div>
+                                    {% if ref.session_summary %}
+                                        <div style="background: var(--yellow-soft); padding: 0.75rem 1rem; border-radius: 8px; font-size: 0.88rem; color: var(--text-primary); border-left: 3px solid var(--gold); margin-top: 0.6rem;">
+                                            <strong style="color: var(--accent-hover); font-size: 0.75rem; text-transform: uppercase;">Counselor Session Summary:</strong><br>
+                                            <span style="white-space: pre-wrap;">{{ ref.session_summary }}</span>
+                                        </div>
+                                    {% endif %}
                                 </td>
                             </tr>
                         {% endfor %}

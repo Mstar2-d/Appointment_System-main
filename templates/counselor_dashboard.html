@@ -35,11 +35,6 @@
                 <h2 style="margin: 0; border: none; padding: 0; font-size: 1.6rem;">Upcoming Appointments</h2>
             </div>
             <div style="display: flex; gap: 0.6rem; flex-wrap: wrap;">
-                <form method="POST" action="{{ url_for('counselor_test_email') }}">
-                    <button type="submit" class="btn btn-secondary" style="padding: 0.7rem 1.2rem; font-size: 0.85rem;">
-                        Send Test Email
-                    </button>
-                </form>
                 <a href="{{ url_for('block_time') }}" class="btn btn-primary" style="padding: 0.7rem 1.2rem; font-size: 0.85rem;">
                     Block Unavailable Time
                 </a>
@@ -140,6 +135,42 @@
                         <div style="background: var(--bg-secondary); border-radius: var(--radius-sm); padding: 1rem 1.1rem; margin-bottom: 1rem;">
                             <div style="font-size: 0.78rem; color: var(--text-tertiary); text-transform: uppercase; letter-spacing: 0.04em; font-weight: 600; margin-bottom: 0.4rem;">Purpose / Concern</div>
                             <div style="color: var(--text-primary); font-size: 0.92rem; line-height: 1.6; white-space: pre-wrap;">{{ appt.purpose }}</div>
+                        </div>
+
+                        <div style="background: var(--blue-soft); border: 1px solid var(--accent); border-radius: var(--radius-md); padding: 1.25rem; margin-bottom: 1.25rem; transition: all 0.3s ease;"
+                             onmouseover="this.style.boxShadow='0 8px 24px rgba(var(--accent-rgb), 0.08)';"
+                             onmouseout="this.style.boxShadow='none';">
+                            <div style="display: flex; justify-content: space-between; align-items: center; gap: 0.75rem; margin-bottom: 0.85rem; flex-wrap: wrap;">
+                                <div style="display: flex; align-items: center; gap: 0.5rem;">
+                                    <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="var(--accent)" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"></path><path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"></path></svg>
+                                    <div style="font-size: 0.78rem; color: var(--accent); text-transform: uppercase; letter-spacing: 0.06em; font-weight: 700;">Session Summary</div>
+                                </div>
+                                {% if appt.referred_by_id %}
+                                    <div style="display: flex; align-items: center; gap: 0.4rem; background: rgba(var(--accent-rgb), 0.1); padding: 0.35rem 0.65rem; border-radius: 20px;">
+                                        <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="var(--accent)" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"></path><circle cx="12" cy="12" r="3"></circle></svg>
+                                        <span style="font-size: 0.7rem; color: var(--accent); font-weight: 600;">Visible to Teacher</span>
+                                    </div>
+                                {% endif %}
+                            </div>
+                            <form method="POST" action="{{ url_for('save_session_summary', appointment_id=appt.id) }}">
+                                <label for="summary_{{ appt.id }}" style="position: absolute; left: -9999px;">Session summary</label>
+                                <textarea id="summary_{{ appt.id }}" name="session_summary" rows="3" maxlength="2000"
+                                          style="width: 100%; border: 1.5px solid var(--border); border-radius: var(--radius-sm); padding: 0.85rem 1rem; font-size: 0.9rem; line-height: 1.5; background: var(--bg-card); color: var(--text-primary); transition: all 0.2s ease; resize: vertical; margin-bottom: 0.75rem; font-family: 'Inter', sans-serif;"
+                                          placeholder="Summarize the session and suggest what the teacher can do to support this student..."
+                                          onfocus="this.style.borderColor='var(--accent)'; this.style.boxShadow='0 0 0 4px rgba(var(--accent-rgb), 0.1)';"
+                                          onblur="this.style.borderColor='var(--border)'; this.style.boxShadow='none';">{{ appt.session_summary or '' }}</textarea>
+                                <div style="display: flex; align-items: center; gap: 0.75rem; flex-wrap: wrap;">
+                                    <button type="submit" class="btn btn-primary" style="padding: 0.6rem 1.25rem; font-size: 0.82rem; border-radius: 20px; box-shadow: 0 4px 12px rgba(var(--accent-rgb), 0.2);">
+                                        Save Summary
+                                    </button>
+                                    {% if appt.session_summary %}
+                                        <div style="display: flex; align-items: center; gap: 0.35rem; color: var(--success); font-weight: 600; font-size: 0.78rem;">
+                                            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"></polyline></svg>
+                                            Saved
+                                        </div>
+                                    {% endif %}
+                                </div>
+                            </form>
                         </div>
 
                         <div class="action-btns">

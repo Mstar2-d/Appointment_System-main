@@ -33,12 +33,6 @@ login_manager.login_view = 'login'
 login_manager.login_message_category = 'info'
 
 
-def student_has_active_appointment(student_id):
-    return Appointment.query.filter_by(
-        student_id=student_id
-    ).filter(Appointment.status.in_(['pending', 'approved'])).first() is not None
-
-
 def email_is_configured():
     return bool(app.config['MAIL_SERVER'] and app.config['MAIL_DEFAULT_SENDER'])
 
@@ -274,6 +268,7 @@ class Appointment(db.Model):
     guest_student_id = db.Column(db.String(50))
     referred_by_id = db.Column(db.Integer, db.ForeignKey('user.id'), nullable=True)
     is_guest = db.Column(db.Boolean, default=False)
+    session_summary = db.Column(db.Text)
 
     student = db.relationship('User', foreign_keys=[student_id], backref=db.backref('student_appointments', lazy=True))
     counselor = db.relationship('User', foreign_keys=[counselor_id], backref=db.backref('counselor_appointments', lazy=True))
@@ -631,55 +626,26 @@ def logout():
     return redirect(url_for('index'))
 
 
-@app.route('/counselor/test-email', methods=['POST'])
-@login_required
-def counselor_test_email():
-    if not current_user.is_counselor:
-        abort(403)
-    recipient = current_user.email
-    body = (
-        f"Hello {current_user.full_name},\n\n"
-        "This is a test email from the Appointment System to verify your SMTP settings.\n"
-        f"Server: {app.config.get('MAIL_SERVER', '(not set)')}\n"
-        f"Port: {app.config.get('MAIL_PORT', '(not set)')}\n"
-        f"Sender: {app.config.get('MAIL_DEFAULT_SENDER', '(not set)')}\n\n"
-        "If you received this, password reset emails and other student notifications will also work.\n"
-    )
-    if send_email(recipient, 'Appointment System - Test Email', body):
-        missing = missing_email_settings()
-        if missing:
-            flash(
-                f"Test email sent to {recipient}, but consider filling in: {', '.join(missing)}.",
-                'success'
-            )
-        else:
-            flash(f"Test email sent successfully to {recipient}.", 'success')
-    else:
-        missing = missing_email_settings()
-        if missing:
-            flash(
-                "Test email not sent because these settings are missing: "
-                f"{', '.join(missing)}. Fill them in the .env file and restart the app.",
-                'danger'
-            )
-        else:
-            flash(
-                "Test email failed. Verify your Gmail App Password in .env, "
-                "that 2FA is enabled on the Google account, and that outbound port 587 is allowed.",
-                'danger'
-            )
-    return redirect(url_for('counselor_dashboard'))
-
-
 @app.route('/counselor/dashboard')
 @login_required
 def counselor_dashboard():
     if not current_user.is_counselor:
         abort(403)
     today = datetime.now().date()
+    # Show upcoming appointments plus any unresolved teacher referral
+    # (referrals use today's date as a placeholder, so they must stay visible
+    # after that day until the counselor acts on them).
     upcoming_appointments = Appointment.query.filter_by(
         counselor_id=current_user.id
-    ).filter(Appointment.date >= today).order_by(Appointment.date, Appointment.start_time).all()
+    ).filter(
+        db.or_(
+            Appointment.date >= today,
+            db.and_(
+                Appointment.referred_by_id.isnot(None),
+                Appointment.status.in_(['pending', 'approved'])
+            )
+        )
+    ).order_by(Appointment.date, Appointment.start_time).all()
     pending_appointments = [a for a in upcoming_appointments if a.status == 'pending']
 
     upcoming_blocked = BlockedTime.query.filter_by(
@@ -820,129 +786,20 @@ def update_appointment(appointment_id, action):
         return redirect(url_for('student_dashboard'))
 
 
-@app.route('/student/dashboard')
+@app.route('/appointment/<int:appointment_id>/summary', methods=['POST'])
 @login_required
-def student_dashboard():
-    if not current_user.is_student:
+def save_session_summary(appointment_id):
+    if not current_user.is_counselor:
         abort(403)
-    today = datetime.now().date()
-    my_appointments = Appointment.query.filter_by(
-        student_id=current_user.id
-    ).order_by(Appointment.date.desc(), Appointment.start_time.desc()).all()
-    counselors = User.query.filter_by(role='counselor', is_admin=False).all()
-    can_book = not student_has_active_appointment(current_user.id)
-    return render_template('student_dashboard.html',
-                           appointments=my_appointments,
-                           counselors=counselors,
-                           today=today,
-                           can_book=can_book)
-
-
-@app.route('/counselor/<int:counselor_id>/book', methods=['GET', 'POST'])
-@login_required
-def book_appointment(counselor_id):
-    if not current_user.is_student:
+    appointment = Appointment.query.get_or_404(appointment_id)
+    if appointment.counselor_id != current_user.id:
         abort(403)
-    counselor = User.query.get_or_404(counselor_id)
-    if not counselor.is_counselor:
-        abort(404)
 
-    if student_has_active_appointment(current_user.id):
-        flash('You already have an active appointment. Cancel it first to book a new one.', 'danger')
-        return redirect(url_for('student_dashboard'))
-
-    today = datetime.now().date()
-
-    selected_date = request.args.get('date')
-    if selected_date:
-        try:
-            selected_date = datetime.strptime(selected_date, '%Y-%m-%d').date()
-        except ValueError:
-            selected_date = None
-    if not selected_date:
-        selected_date = today
-
-    if not is_weekday(selected_date) or selected_date < today:
-        target = selected_date if selected_date >= today else today
-        normalized = next_weekday(target, allow_today=(selected_date >= today and is_weekday(selected_date)))
-        if normalized != selected_date:
-            return redirect(url_for('book_appointment', counselor_id=counselor_id, date=normalized.strftime('%Y-%m-%d')))
-        selected_date = normalized
-
-    view_month = None
-    raw_month = request.args.get('month')
-    if raw_month:
-        try:
-            yr, mo = raw_month.split('-')
-            view_month = date(int(yr), int(mo), 1)
-        except Exception:
-            view_month = None
-    if not view_month:
-        view_month = selected_date.replace(day=1)
-
-    available_slots = generate_available_slots(counselor_id, selected_date)
-
-    if request.method == 'POST':
-        if student_has_active_appointment(current_user.id):
-            flash('You already have an active appointment. Cancel it first to book a new one.', 'danger')
-            return redirect(url_for('student_dashboard'))
-
-        slot_key = request.form.get('slot_key')
-        purpose = request.form.get('purpose')
-        if not slot_key or not purpose:
-            flash('Please select a time slot and enter a purpose.', 'danger')
-            return redirect(url_for('book_appointment', counselor_id=counselor_id, date=selected_date.strftime('%Y-%m-%d')))
-
-        try:
-            start_str, end_str = slot_key.split('_')
-            start_h, start_m = int(start_str[:2]), int(start_str[2:])
-            end_h, end_m = int(end_str[:2]), int(end_str[2:])
-            slot_start = time(start_h, start_m)
-            slot_end = time(end_h, end_m)
-        except Exception:
-            flash('Invalid time slot selected.', 'danger')
-            return redirect(url_for('book_appointment', counselor_id=counselor_id, date=selected_date.strftime('%Y-%m-%d')))
-
-        refreshed_slots = generate_available_slots(counselor_id, selected_date)
-        valid_keys = {s['key'] for s in refreshed_slots}
-        if slot_key not in valid_keys:
-            flash('This slot is no longer available.', 'danger')
-            return redirect(url_for('book_appointment', counselor_id=counselor_id, date=selected_date.strftime('%Y-%m-%d')))
-
-        existing = Appointment.query.filter_by(
-            counselor_id=counselor_id,
-            date=selected_date,
-            start_time=slot_start
-        ).filter(Appointment.status.in_(['pending', 'approved'])).first()
-        if existing:
-            flash('This slot is no longer available.', 'danger')
-            return redirect(url_for('book_appointment', counselor_id=counselor_id, date=selected_date.strftime('%Y-%m-%d')))
-
-        appointment = Appointment(
-            counselor_id=counselor_id,
-            student_id=current_user.id,
-            date=selected_date,
-            start_time=slot_start,
-            end_time=slot_end,
-            purpose=purpose
-        )
-        db.session.add(appointment)
-        db.session.commit()
-        flash('Appointment booked successfully! Waiting for counselor approval.', 'success')
-        return redirect(url_for('student_dashboard'))
-
-    dates = generate_weekdays(today, 14)
-    calendar = build_calendar_month(view_month, today, selected_date, counselor_id)
-    return render_template('book_appointment.html',
-                           counselor=counselor,
-                           available_slots=available_slots,
-                           selected_date=selected_date,
-                           dates=dates,
-                           calendar=calendar,
-                           view_month=view_month,
-                           weekday_names=WEEKDAY_NAMES,
-                           default_start=DEFAULT_WORK_START.strftime('%I:%M %p'),
-                           default_end=DEFAULT_WORK_END.strftime('%I:%M %p'))
+    summary = request.form.get('session_summary', '').strip()
+    appointment.session_summary = summary if summary else None
+    db.session.commit()
+    flash('Session summary saved. The referring teacher can now see it.', 'success')
+    return redirect(url_for('counselor_dashboard'))
 
 
 MOOD_OPTIONS = [
@@ -1201,6 +1058,7 @@ with app.app_context():
                     ('guest_student_id', 'VARCHAR(50)'),
                     ('referred_by_id', 'INTEGER'),
                     ('is_guest', 'BOOLEAN DEFAULT 0'),
+                    ('session_summary', 'TEXT'),
                 ]:
                     if col_name not in appt_columns:
                         conn.execute(db.text(f'ALTER TABLE appointment ADD COLUMN {col_name} {col_type}'))
