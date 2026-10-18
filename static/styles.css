@@ -1224,6 +1224,117 @@ textarea {
 }
 
 /* ---------- Misc ---------- */
+.history-search {
+    width: 100%;
+    border: 1.5px solid var(--border);
+    border-radius: var(--radius-sm);
+    padding: 0.8rem 1.1rem;
+    font-size: 0.92rem;
+    font-family: 'Inter', -apple-system, BlinkMacSystemFont, sans-serif;
+    background: var(--bg-card);
+    color: var(--text-primary);
+    margin-bottom: 1.25rem;
+    transition: border-color 0.2s ease, box-shadow 0.2s ease;
+}
+
+.history-search:focus {
+    outline: none;
+    border-color: var(--accent);
+    box-shadow: 0 0 0 4px var(--blue-soft);
+}
+
+.history-no-results {
+    text-align: center;
+    padding: 2.5rem 1rem;
+    color: var(--text-tertiary);
+}
+
+.history-list {
+    display: flex;
+    flex-direction: column;
+    gap: 0.75rem;
+}
+
+.history-entry {
+    border: 1px solid var(--border-light);
+    border-radius: var(--radius-md);
+    background: var(--bg-card);
+    overflow: hidden;
+    transition: border-color 0.2s ease, box-shadow 0.2s ease;
+}
+
+.history-entry.open {
+    border-color: var(--border);
+    box-shadow: 0 10px 30px rgba(var(--shadow-rgb), 0.06);
+}
+
+.history-head {
+    width: 100%;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 1rem;
+    padding: 1rem 1.35rem;
+    background: transparent;
+    border: none;
+    cursor: pointer;
+    text-align: left;
+    font-family: inherit;
+    color: inherit;
+    transition: background 0.2s ease;
+}
+
+.history-head:hover {
+    background: var(--bg-secondary);
+}
+
+.history-head-main {
+    display: flex;
+    flex-direction: column;
+    gap: 0.15rem;
+    min-width: 0;
+}
+
+.history-date {
+    font-size: 0.78rem;
+    color: var(--text-tertiary);
+    font-weight: 600;
+    letter-spacing: 0.02em;
+}
+
+.history-name {
+    font-size: 1rem;
+    font-weight: 600;
+    color: var(--text-primary);
+}
+
+.history-sub {
+    font-size: 0.85rem;
+    font-weight: 400;
+    color: var(--text-tertiary);
+}
+
+.history-head-meta {
+    display: flex;
+    align-items: center;
+    gap: 0.75rem;
+    flex-shrink: 0;
+}
+
+.history-chevron {
+    color: var(--text-tertiary);
+    transition: transform 0.25s ease;
+}
+
+.history-entry.open .history-chevron {
+    transform: rotate(180deg);
+}
+
+.history-body {
+    padding: 1.25rem 1.35rem 1.35rem;
+    border-top: 1px solid var(--border-light);
+}
+
 .empty-state {
     text-align: center;
     padding: 4rem 2rem;

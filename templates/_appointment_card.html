@@ -1,0 +1,145 @@
+<div style="display: flex; justify-content: space-between; align-items: flex-start; gap: 1.25rem; flex-wrap: wrap; margin-bottom: 1rem;">
+        <div style="display: flex; align-items: center; gap: 1rem; flex-wrap: wrap;">
+            <div style="padding: 0.5rem 0.9rem; background: var(--blue-soft); border-radius: var(--radius-sm);">
+                <div style="font-size: 0.7rem; text-transform: uppercase; letter-spacing: 0.06em; color: var(--accent); font-weight: 600;">{{ appt.date.strftime('%a') }}</div>
+                <div style="font-size: 1.2rem; font-weight: 700; color: var(--accent); font-family: 'Playfair Display', serif; line-height: 1;">{{ appt.date|fmt_short }}</div>
+                <div style="font-size: 0.72rem; color: var(--text-secondary);">{{ appt.date.strftime('%Y') }}</div>
+            </div>
+            <div>
+                <div style="display: flex; align-items: center; gap: 0.6rem; flex-wrap: wrap; margin-bottom: 0.25rem;">
+                    <strong style="font-size: 1.05rem; color: var(--text-primary);">{{ appt.display_name }}</strong>
+                    {% if appt.is_guest %}
+                        <span class="badge badge-warning" style="font-size: 0.68rem; padding: 0.25rem 0.55rem;">Walk-in</span>
+                    {% else %}
+                        <span class="badge badge-info" style="font-size: 0.68rem; padding: 0.25rem 0.55rem;">Registered</span>
+                    {% endif %}
+                    <span style="font-size: 0.88rem; color: var(--text-secondary); font-weight: 500;">· {{ appt.time_str }}</span>
+                </div>
+                {% if appt.is_guest %}
+                    {% if appt.guest_student_id %}
+                        <div style="font-size: 0.82rem; color: var(--text-secondary);">Student ID: {{ appt.guest_student_id }}</div>
+                    {% endif %}
+                {% elif appt.student and appt.student.student_id %}
+                    <div style="font-size: 0.82rem; color: var(--text-secondary);">Student ID: {{ appt.student.student_id }}</div>
+                {% endif %}
+                {% if appt.is_guest and (appt.year_level or appt.section or appt.department) %}
+                    <div style="font-size: 0.82rem; color: var(--text-secondary);">
+                        {% if appt.department %}{{ appt.department }}{% endif %}
+                        {% if appt.department and (appt.year_level or appt.section) %} · {% endif %}
+                        {% if appt.year_level %}{{ appt.year_level }}{% endif %}
+                        {% if appt.year_level and appt.section %} · {% endif %}
+                        {% if appt.section %}Section: {{ appt.section }}{% endif %}
+                    </div>
+                {% endif %}
+                {% if appt.is_guest and appt.birthday %}
+                    <div style="font-size: 0.82rem; color: var(--text-secondary);">Birthday: {{ appt.birthday|fmt_long }}</div>
+                {% endif %}
+                {% if appt.is_guest and (appt.contact_email or appt.contact_phone) %}
+                    <div style="font-size: 0.82rem; color: var(--text-secondary);">
+                        {% if appt.contact_email %}✉ {{ appt.contact_email }}{% endif %}{% if appt.contact_email and appt.contact_phone %} · {% endif %}{% if appt.contact_phone %}☎ {{ appt.contact_phone }}{% endif %}
+                    </div>
+                {% endif %}
+            </div>
+        </div>
+        <div style="display: flex; align-items: center; gap: 0.6rem; flex-wrap: wrap;">
+            {% if appt.status == 'pending' %}
+                <span class="badge badge-pending">Pending</span>
+            {% elif appt.status == 'approved' %}
+                <span class="badge badge-approved">Approved</span>
+            {% elif appt.status == 'rejected' %}
+                <span class="badge badge-rejected">Rejected</span>
+            {% elif appt.status == 'completed' %}
+                <span class="badge badge-completed">Completed</span>
+            {% endif %}
+            <span style="font-family: 'Inter', monospace; font-size: 0.78rem; color: var(--text-tertiary); background: var(--bg-secondary); padding: 0.25rem 0.55rem; border-radius: 8px;">#{{ '%06d'|format(appt.id) }}</span>
+        </div>
+    </div>
+
+    {% if appt.referred_by_id %}
+        <div style="background: var(--blue-soft); border-left: 3px solid var(--accent); padding: 0.85rem 1rem; border-radius: var(--radius-sm); margin-bottom: 1rem;">
+            <div style="font-size: 0.78rem; color: var(--accent); text-transform: uppercase; letter-spacing: 0.04em; font-weight: 600; margin-bottom: 0.35rem;">Teacher Referral</div>
+            <div style="font-size: 0.88rem;">
+                <span style="font-weight: 600; color: var(--accent);">Referred by:</span>
+                <span style="color: var(--text-primary); margin-left: 0.35rem;">{{ appt.referred_by.full_name }} ({{ appt.referred_by.specialty if appt.referred_by.specialty else 'No Dept' }})</span>
+            </div>
+        </div>
+    {% endif %}
+
+    {% if appt.is_guest and (appt.mood_rating or appt.mood_description) %}
+        <div style="background: var(--yellow-soft); border-left: 3px solid var(--gold); padding: 0.85rem 1rem; border-radius: var(--radius-sm); margin-bottom: 1rem;">
+            <div style="font-size: 0.78rem; color: var(--accent-hover); text-transform: uppercase; letter-spacing: 0.04em; font-weight: 600; margin-bottom: 0.35rem;">Pre-session check-in</div>
+            {% if appt.mood_rating %}
+                <div style="font-size: 0.88rem; margin-bottom: 0.2rem;">
+                    <span style="font-weight: 600; color: var(--accent-hover);">Mood:</span>
+                    <span style="color: var(--text-primary); text-transform: capitalize; margin-left: 0.35rem;">{{ appt.mood_rating.replace('_', ' ') }}</span>
+                </div>
+            {% endif %}
+            {% if appt.mood_description %}
+                <div style="font-size: 0.88rem;">
+                    <span style="font-weight: 600; color: var(--accent-hover);">Concerns:</span>
+                    <span style="color: var(--text-primary); margin-left: 0.35rem;">{{ appt.mood_description }}</span>
+                </div>
+            {% endif %}
+        </div>
+    {% endif %}
+
+    <div style="background: var(--bg-secondary); border-radius: var(--radius-sm); padding: 1rem 1.1rem; margin-bottom: 1rem;">
+        <div style="font-size: 0.78rem; color: var(--text-tertiary); text-transform: uppercase; letter-spacing: 0.04em; font-weight: 600; margin-bottom: 0.4rem;">Purpose / Concern</div>
+        <div style="color: var(--text-primary); font-size: 0.92rem; line-height: 1.6; white-space: pre-wrap;">{{ appt.purpose }}</div>
+    </div>
+
+    <div style="background: var(--blue-soft); border: 1px solid var(--accent); border-radius: var(--radius-md); padding: 1.25rem; margin-bottom: 1.25rem; transition: all 0.3s ease;"
+         onmouseover="this.style.boxShadow='0 8px 24px rgba(var(--accent-rgb), 0.08)';"
+         onmouseout="this.style.boxShadow='none';">
+        <div style="display: flex; justify-content: space-between; align-items: center; gap: 0.75rem; margin-bottom: 0.85rem; flex-wrap: wrap;">
+            <div style="display: flex; align-items: center; gap: 0.5rem;">
+                <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="var(--accent)" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"></path><path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"></path></svg>
+                <div style="font-size: 0.78rem; color: var(--accent); text-transform: uppercase; letter-spacing: 0.06em; font-weight: 700;">Session Summary</div>
+            </div>
+            {% if appt.referred_by_id %}
+                <div style="display: flex; align-items: center; gap: 0.4rem; background: rgba(var(--accent-rgb), 0.1); padding: 0.35rem 0.65rem; border-radius: 20px;">
+                    <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="var(--accent)" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"></path><circle cx="12" cy="12" r="3"></circle></svg>
+                    <span style="font-size: 0.7rem; color: var(--accent); font-weight: 600;">Visible to Teacher</span>
+                </div>
+            {% endif %}
+        </div>
+        {% if appt.status == 'completed' %}
+            <div style="font-size: 0.78rem; color: var(--success); text-transform: uppercase; letter-spacing: 0.04em; font-weight: 600; margin-bottom: 0.4rem;">Locked — session finished</div>
+            <div style="width: 100%; border: 1.5px solid var(--border); border-radius: var(--radius-sm); padding: 0.85rem 1rem; font-size: 0.9rem; line-height: 1.5; background: var(--bg-secondary); color: var(--text-primary); white-space: pre-wrap;">{{ appt.session_summary if appt.session_summary else 'No summary was written for this session.' }}</div>
+        {% else %}
+        <form method="POST" action="{{ url_for('save_session_summary', appointment_id=appt.id) }}">
+            <label for="summary_{{ appt.id }}" style="position: absolute; left: -9999px;">Session summary</label>
+            <textarea id="summary_{{ appt.id }}" name="session_summary" rows="3" maxlength="2000"
+                      style="width: 100%; border: 1.5px solid var(--border); border-radius: var(--radius-sm); padding: 0.85rem 1rem; font-size: 0.9rem; line-height: 1.5; background: var(--bg-card); color: var(--text-primary); transition: all 0.2s ease; resize: vertical; margin-bottom: 0.75rem; font-family: 'Inter', sans-serif;"
+                      placeholder="Summarize the session and suggest what the teacher can do to support this student..."
+                      onfocus="this.style.borderColor='var(--accent)'; this.style.boxShadow='0 0 0 4px rgba(var(--accent-rgb), 0.1)';"
+                      onblur="this.style.borderColor='var(--border)'; this.style.boxShadow='none';">{{ appt.session_summary or '' }}</textarea>
+            <div style="display: flex; align-items: center; gap: 0.75rem; flex-wrap: wrap;">
+                <button type="submit" class="btn btn-primary" style="padding: 0.6rem 1.25rem; font-size: 0.82rem; border-radius: 20px; box-shadow: 0 4px 12px rgba(var(--accent-rgb), 0.2);">
+                    Save Summary
+                </button>
+                {% if appt.session_summary %}
+                    <div style="display: flex; align-items: center; gap: 0.35rem; color: var(--success); font-weight: 600; font-size: 0.78rem;">
+                        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"></polyline></svg>
+                        Saved
+                    </div>
+                {% endif %}
+            </div>
+        </form>
+        {% endif %}
+    </div>
+
+    <div class="action-btns">
+        {% if appt.status == 'pending' %}
+            <form method="POST" action="{{ url_for('update_appointment', appointment_id=appt.id, action='approve') }}">
+                <button type="submit" class="btn btn-success" style="padding: 0.55rem 1.1rem; font-size: 0.85rem;">✓ Approve</button>
+            </form>
+            <form method="POST" action="{{ url_for('update_appointment', appointment_id=appt.id, action='reject') }}">
+                <button type="submit" class="btn btn-danger" style="padding: 0.55rem 1.1rem; font-size: 0.85rem;">✕ Reject</button>
+            </form>
+        {% elif appt.status == 'approved' %}
+            <form method="POST" action="{{ url_for('update_appointment', appointment_id=appt.id, action='complete') }}">
+                <button type="submit" class="btn btn-info" style="padding: 0.55rem 1.1rem; font-size: 0.85rem;">✓ Mark Complete</button>
+            </form>
+        {% endif %}
+    </div>

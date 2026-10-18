@@ -1,0 +1,63 @@
+{% extends "base.html" %}
+
+{% block title %}Appointment History{% endblock %}
+
+{% block content %}
+<div class="section-label" style="margin-bottom: 0.75rem;">Records</div>
+<h2 style="font-size: 2.25rem; margin-bottom: 2.5rem; border: none; padding: 0;">Appointment History</h2>
+
+<div class="card">
+    <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 1.5rem; flex-wrap: wrap; gap: 0.75rem;">
+        <div>
+            <div class="section-label" style="margin-bottom: 0.5rem;">Past Sessions</div>
+            <h2 style="margin: 0; border: none; padding: 0; font-size: 1.6rem;">Completed &amp; Past Appointments</h2>
+        </div>
+        <a href="{{ url_for('counselor_dashboard') }}" class="btn btn-primary" style="padding: 0.7rem 1.2rem; font-size: 0.85rem;">
+            ← Back to Dashboard
+        </a>
+    </div>
+
+    {% if appointments %}
+        <input type="search" id="historySearch" class="history-search" autocomplete="off"
+               aria-label="Search appointment history"
+               placeholder="Search by name, department, or year level…">
+
+        <div class="history-list" id="historyList">
+            {% for appt in appointments %}
+                <div class="history-entry" data-search="{{ appt.display_name }} {{ appt.department or '' }} {{ appt.year_level or '' }}">
+                    <button type="button" class="history-head" data-history-toggle aria-expanded="false">
+                        <div class="history-head-main">
+                            <span class="history-date">{{ appt.date|fmt_long }} · {{ appt.time_str }}</span>
+                            <span class="history-name">{{ appt.display_name }}{% if appt.department or appt.year_level %}<span class="history-sub"> · {% if appt.department %}{{ appt.department }}{% endif %}{% if appt.department and appt.year_level %} · {% endif %}{% if appt.year_level %}{{ appt.year_level }}{% endif %}</span>{% endif %}</span>
+                        </div>
+                        <div class="history-head-meta">
+                            {% if appt.status == 'pending' %}
+                                <span class="badge badge-pending">Pending</span>
+                            {% elif appt.status == 'approved' %}
+                                <span class="badge badge-approved">Approved</span>
+                            {% elif appt.status == 'rejected' %}
+                                <span class="badge badge-rejected">Rejected</span>
+                            {% elif appt.status == 'completed' %}
+                                <span class="badge badge-completed">Completed</span>
+                            {% endif %}
+                            <svg class="history-chevron" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="6 9 12 15 18 9"></polyline></svg>
+                        </div>
+                    </button>
+                    <div class="history-body" hidden>
+                        {% include '_appointment_card.html' %}
+                    </div>
+                </div>
+            {% endfor %}
+        </div>
+
+        <div class="history-no-results" id="historyNoResults" style="display: none;">
+            <p>No appointments match your search.</p>
+        </div>
+    {% else %}
+        <div class="empty-state">
+            <p>No past appointments yet.</p>
+            <p style="margin-top: 0.5rem; font-size: 0.95rem;">Completed sessions and appointments whose date has passed will appear here.</p>
+        </div>
+    {% endif %}
+</div>
+{% endblock %}

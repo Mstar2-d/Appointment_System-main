@@ -31,6 +31,7 @@
                 {% if current_user.is_counselor %}
                     {% if not current_user.is_admin %}
                         <a href="{{ url_for('block_time') }}">Block Time</a>
+                        <a href="{{ url_for('counselor_history') }}">History</a>
                     {% endif %}
                 {% elif current_user.is_teacher %}
                     <a href="{{ url_for('teacher_refer') }}">Refer Student</a>

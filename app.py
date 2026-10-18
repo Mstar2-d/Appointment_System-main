@@ -598,8 +598,6 @@ def login():
     if current_user.is_authenticated:
         return redirect(url_for('index'))
     if not session.get('counselor_access', False):
-        flash('Counselor login is only available in counselor access mode. '
-              'Students can book an appointment without an account.', 'info')
         return redirect(url_for('index'))
     if request.method == 'POST':
         username = request.form.get('username')
@@ -626,25 +624,33 @@ def logout():
     return redirect(url_for('index'))
 
 
+def upcoming_appointments_query(counselor_id):
+    # Appointments that still need the counselor's attention: today/future
+    # appointments that are not yet completed, plus unresolved teacher
+    # referrals (they use a placeholder date and must stay visible until acted on).
+    today = datetime.now().date()
+    return Appointment.query.filter_by(counselor_id=counselor_id).filter(
+        db.or_(
+            db.and_(
+                Appointment.date >= today,
+                Appointment.status != 'completed'
+            ),
+            db.and_(
+                Appointment.referred_by_id.isnot(None),
+                Appointment.status.in_(['pending', 'approved'])
+            )
+        )
+    )
+
+
 @app.route('/counselor/dashboard')
 @login_required
 def counselor_dashboard():
     if not current_user.is_counselor:
         abort(403)
     today = datetime.now().date()
-    # Show upcoming appointments plus any unresolved teacher referral
-    # (referrals use today's date as a placeholder, so they must stay visible
-    # after that day until the counselor acts on them).
-    upcoming_appointments = Appointment.query.filter_by(
-        counselor_id=current_user.id
-    ).filter(
-        db.or_(
-            Appointment.date >= today,
-            db.and_(
-                Appointment.referred_by_id.isnot(None),
-                Appointment.status.in_(['pending', 'approved'])
-            )
-        )
+    upcoming_appointments = upcoming_appointments_query(
+        current_user.id
     ).order_by(Appointment.date, Appointment.start_time).all()
     pending_appointments = [a for a in upcoming_appointments if a.status == 'pending']
 
@@ -668,6 +674,22 @@ def counselor_dashboard():
                            blocked_times=upcoming_blocked,
                            counselor_accounts=counselor_accounts,
                            teacher_accounts=teacher_accounts)
+
+
+@app.route('/counselor/history')
+@login_required
+def counselor_history():
+    if not current_user.is_counselor:
+        abort(403)
+    # Everything that is no longer part of the upcoming schedule: completed
+    # sessions and appointments whose date has already passed.
+    upcoming_ids = {a.id for a in upcoming_appointments_query(current_user.id).all()}
+    all_appointments = Appointment.query.filter_by(
+        counselor_id=current_user.id
+    ).order_by(Appointment.date.desc(), Appointment.start_time.desc()).all()
+    past_appointments = [a for a in all_appointments if a.id not in upcoming_ids]
+
+    return render_template('counselor_history.html', appointments=past_appointments)
 
 
 @app.route('/counselor/block_time', methods=['GET', 'POST'])
@@ -794,6 +816,10 @@ def save_session_summary(appointment_id):
     appointment = Appointment.query.get_or_404(appointment_id)
     if appointment.counselor_id != current_user.id:
         abort(403)
+
+    if appointment.status == 'completed':
+        flash('This session is already finished. The summary can no longer be edited.', 'danger')
+        return redirect(url_for('counselor_dashboard'))
 
     summary = request.form.get('session_summary', '').strip()
     appointment.session_summary = summary if summary else None
