@@ -412,6 +412,43 @@ button:focus-visible,
     box-shadow: 0 0 0 4px rgba(43, 108, 184, 0.16);
 }
 
+.password-wrapper {
+    position: relative;
+    display: flex;
+    align-items: center;
+}
+
+.password-wrapper input {
+    padding-right: 3rem !important;
+}
+
+.password-toggle {
+    position: absolute;
+    right: 0.75rem;
+    background: transparent;
+    border: none;
+    padding: 0.5rem;
+    color: var(--text-tertiary);
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    border-radius: 8px;
+    transition: all 0.2s ease;
+    z-index: 2;
+}
+
+.password-toggle:hover {
+    color: var(--accent);
+    background: var(--bg-secondary);
+}
+
+.password-toggle svg {
+    display: block;
+    width: 20px;
+    height: 20px;
+}
+
 .form-row {
     display: grid;
     grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
