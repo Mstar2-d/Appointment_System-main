@@ -1,31 +1,30 @@
 * { margin: 0; padding: 0; box-sizing: border-box; }
 
 /* ==========================================================
-   Norzagaray College palette (taken from the logo)
-   Ring yellow  #FFE600  | Gold      #F5C400
-   Shield blue  #2B6CB8  | Navy      #0F3B8C  | Deep navy #0A2A6B
-   Flame orange #F08A1C  | Wheat     #C9791B
-   Book silver  #E9EDF3
+   UniReach palette (taken from the logo)
+   Deep navy   #002157  | Navy      #003366
+   Bright blue #005bb5  | Sky blue  #7CCDF4
+   Blue soft   #E8F1FF
    ========================================================== */
 :root {
     --bg-primary: #F7F9FC;
     --bg-secondary: #EAF0F9;
     --bg-card: #FFFFFF;
-    --text-primary: #0A2048;
+    --text-primary: #002157;
     --text-secondary: #4A5A78;
     --text-tertiary: #8C98B0;
 
-    --accent: #0F3B8C;
-    --accent-hover: #0A2A6B;
-    --blue: #2B6CB8;
-    --blue-soft: #E3EDF9;
+    --accent: #002157;
+    --accent-hover: #00173d;
+    --blue: #005bb5;
+    --blue-soft: #E8F1FF;
 
-    --yellow: #FFE600;
-    --gold: #F5C400;
-    --yellow-soft: #FFF8C7;
-    --orange: #F08A1C;
-    --orange-soft: #FDEBD3;
-    --wheat: #C9791B;
+    --yellow: #7CCDF4;
+    --gold: #005bb5;
+    --yellow-soft: #EAF8FF;
+    --orange: #005bb5;
+    --orange-soft: #E8F1FF;
+    --wheat: #003366;
 
     --border: #D7DFEC;
     --border-light: #E6ECF5;
@@ -36,10 +35,10 @@
     --warning-bg: #FFF1D2;
     --danger: #B23A3A;
     --danger-bg: #FBE9E9;
-    --info: #1F5AA6;
-    --info-bg: #E3EDF9;
+    --info: #005bb5;
+    --info-bg: #E8F1FF;
 
-    --shadow-rgb: 15, 59, 140;
+    --shadow-rgb: 0, 33, 87;
 
     --radius-sm: 12px;
     --radius-md: 20px;
@@ -73,7 +72,7 @@ h1, h2, h3, h4, h5, h6 {
 a:focus-visible,
 button:focus-visible,
 .btn:focus-visible {
-    outline: 3px solid var(--gold);
+    outline: 3px solid var(--blue);
     outline-offset: 2px;
 }
 
@@ -103,39 +102,31 @@ button:focus-visible,
 
 .brand-logo {
     position: relative;
-    width: 52px;
-    height: 52px;
-    border-radius: 50%;
-    background: #FFFFFF;
-    border: 2px solid var(--gold);
+    height: 48px;
     display: flex;
     align-items: center;
     justify-content: center;
-    overflow: hidden;
-    box-shadow: 0 4px 14px rgba(var(--shadow-rgb), 0.14);
     flex-shrink: 0;
-    transition: transform 0.3s ease, box-shadow 0.3s ease;
+    transition: transform 0.3s ease;
 }
 
 .brand-logo:hover {
-    transform: scale(1.05);
-    box-shadow: 0 6px 20px rgba(var(--shadow-rgb), 0.22);
+    transform: scale(1.02);
 }
 
 .brand-logo img {
-    width: 92%;
-    height: 92%;
+    height: 100%;
+    width: auto;
     object-fit: contain;
     display: block;
 }
 
 .brand-logo.counselor-mode {
-    border-color: var(--orange);
-    box-shadow: 0 0 0 3px rgba(240, 138, 28, 0.22), 0 4px 14px rgba(240, 138, 28, 0.28);
+    filter: drop-shadow(0 0 8px rgba(0, 91, 181, 0.3));
 }
 
 .brand-logo.counselor-mode:hover {
-    box-shadow: 0 0 0 3px rgba(240, 138, 28, 0.32), 0 6px 20px rgba(240, 138, 28, 0.38);
+    filter: drop-shadow(0 0 12px rgba(0, 91, 181, 0.45));
 }
 
 .counselor-badge {
@@ -145,7 +136,7 @@ button:focus-visible,
     width: 20px;
     height: 20px;
     border-radius: 50%;
-    background: linear-gradient(135deg, #F5A240, #E27A0C);
+    background: linear-gradient(135deg, #7CCDF4, #005bb5);
     color: #FFFFFF;
     font-size: 0.7rem;
     font-weight: 800;
@@ -153,7 +144,7 @@ button:focus-visible,
     align-items: center;
     justify-content: center;
     border: 2px solid #FFFFFF;
-    box-shadow: 0 2px 6px rgba(226, 122, 12, 0.45);
+    box-shadow: 0 2px 6px rgba(0, 91, 181, 0.45);
     font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
     line-height: 1;
 }
@@ -165,22 +156,22 @@ button:focus-visible,
 }
 
 .brand-title {
-    font-family: 'Playfair Display', Georgia, serif;
+    font-family: 'Inter', sans-serif;
     color: var(--accent);
-    font-size: 1.15rem;
-    font-weight: 700;
-    letter-spacing: -0.01em;
+    font-size: 1.4rem;
+    font-weight: 800;
+    letter-spacing: -0.03em;
     margin: 0;
 }
 
 .brand-subtitle {
     font-family: 'Inter', sans-serif;
-    color: var(--wheat);
-    font-size: 0.72rem;
-    font-weight: 600;
-    letter-spacing: 0.06em;
-    text-transform: uppercase;
-    margin-top: 0.15rem;
+    color: var(--text-primary);
+    font-size: 0.85rem;
+    font-weight: 400;
+    letter-spacing: 0;
+    text-transform: none;
+    margin-top: -2px;
 }
 
 .nav-links {
@@ -281,9 +272,9 @@ button:focus-visible,
 }
 
 .btn-accent:hover {
-    background: var(--gold);
+    background: var(--blue);
     transform: translateY(-1px);
-    box-shadow: 0 8px 25px rgba(245, 196, 0, 0.4);
+    box-shadow: 0 8px 25px rgba(0, 91, 181, 0.4);
 }
 
 .btn-success {
@@ -322,7 +313,7 @@ button:focus-visible,
 }
 
 .btn-info:hover {
-    background: #1F5AA6;
+    background: var(--accent-hover);
     transform: translateY(-1px);
 }
 
@@ -622,7 +613,7 @@ button:focus-visible,
     border-radius: var(--radius-md);
     padding: 1.75rem;
     border: 1px solid var(--border-light);
-    border-top: 4px solid var(--gold);
+    border-top: 4px solid var(--yellow);
     transition: all 0.4s cubic-bezier(0.4, 0, 0.2, 1);
 }
 
@@ -630,7 +621,7 @@ button:focus-visible,
     transform: translateY(-4px);
     box-shadow: 0 25px 50px rgba(var(--shadow-rgb), 0.12);
     border-color: var(--border);
-    border-top-color: var(--orange);
+    border-top-color: var(--blue);
 }
 
 .counselor-avatar {
@@ -728,7 +719,7 @@ button:focus-visible,
     color: var(--accent);
     text-decoration: none;
     font-weight: 600;
-    border-bottom: 2px solid var(--gold);
+    border-bottom: 2px solid var(--blue);
     padding-bottom: 1px;
     transition: all 0.2s ease;
 }
@@ -1058,9 +1049,9 @@ button:focus-visible,
 }
 
 .legend-dot.has-slots { background: var(--success); }
-.legend-dot.no-slots { background: var(--orange); }
+.legend-dot.no-slots { background: var(--blue); }
 .legend-dot.weekend { background: var(--danger); opacity: 0.5; }
-.legend-dot.today { background: var(--gold); }
+.legend-dot.today { background: var(--blue); }
 
 .quick-weekday-picker {
     margin-bottom: 1.5rem;

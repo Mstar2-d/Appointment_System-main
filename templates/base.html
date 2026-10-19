@@ -3,8 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>{% block title %}Norzagaray College — Guidance & Counseling{% endblock %}</title>
-    <link rel="icon" type="image/svg+xml" href="{{ url_for('static', filename='logo.svg') }}">
+    <title>{% block title %}UniReach: Always Within Reach.{% endblock %}</title>
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&family=Playfair+Display:wght@400;500;600;700;800;900&display=swap" rel="stylesheet">
@@ -14,12 +13,11 @@
     <nav class="navbar">
         <a href="{{ url_for('index') }}" class="brand" id="appTitle" title="{{ 'Press Ctrl+` to switch to Student access' if session.get('counselor_access') else 'Press Ctrl+` for Counselor access' }}">
             <div class="brand-logo{% if session.get('counselor_access') %} counselor-mode{% endif %}">
-                <img src="{{ url_for('static', filename='logo.svg') }}" alt="Norzagaray College Guidance and Counseling Center Seal">
                 {% if session.get('counselor_access') %}<span class="counselor-badge" title="Counselor mode active">C</span>{% endif %}
             </div>
             <div class="brand-text">
-                <h1 class="brand-title">Norzagaray College</h1>
-                <span class="brand-subtitle">Guidance &amp; Counseling Center</span>
+                <h1 class="brand-title">UniReach</h1>
+                <span class="brand-subtitle">Always Within Reach.</span>
             </div>
         </a>
         <div class="nav-links">
@@ -45,7 +43,7 @@
                 {% if session.get('counselor_access') %}
                     <a href="{{ url_for('login') }}">Counselor Login</a>
                 {% else %}
-                    <a href="{{ url_for('index') }}#counselors" class="btn btn-primary btn-sm">Book an Appointment</a>
+                    <a href="{{ url_for('index') }}#counselors" class="btn btn-primary btn-sm">Set an Appointment</a>
                 {% endif %}
             {% endif %}
         </div>

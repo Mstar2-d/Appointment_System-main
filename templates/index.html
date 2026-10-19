@@ -7,7 +7,7 @@
     <h2>One Conversation Changes Everything.</h2>
     <p>It takes just one simple step to choose your time, share what’s on your mind, and speak with a professional counselor who truly cares.</p>
     {% if counselors %}
-        <a href="#counselors" class="btn btn-primary" style="font-size: 1rem; padding: 1rem 2.25rem;">Book an Appointment</a>
+        <a href="#counselors" class="btn btn-primary" style="font-size: 1rem; padding: 1rem 2.25rem;">Set an Appointment</a>
     {% endif %}
 </div>
 
@@ -32,7 +32,7 @@
                     {% if counselor.phone %}
                         <p style="color: var(--text-secondary); font-size: 0.88rem;">{{ counselor.phone }}</p>
                     {% endif %}
-                    <a href="{{ url_for('book_appointment_public', counselor_id=counselor.id) }}" class="btn btn-primary" style="margin-top: 1.25rem; width: 100%;">Book Appointment</a>
+                    <a href="{{ url_for('book_appointment_public', counselor_id=counselor.id) }}" class="btn btn-primary" style="margin-top: 1.25rem; width: 100%;">Set Appointment</a>
                 </div>
             {% endfor %}
         </div>
