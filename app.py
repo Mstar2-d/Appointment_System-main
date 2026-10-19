@@ -4,9 +4,11 @@ from email.message import EmailMessage
 import os
 import secrets
 import smtplib
+from urllib.parse import urlparse
 from flask import Flask, render_template, request, redirect, url_for, flash, abort, session
 from flask_sqlalchemy import SQLAlchemy
 from flask_login import LoginManager, UserMixin, login_user, login_required, logout_user, current_user
+from sqlalchemy.exc import IntegrityError
 from werkzeug.security import generate_password_hash, check_password_hash
 
 try:
@@ -393,8 +395,8 @@ def index():
             return redirect(url_for('counselor_dashboard'))
         elif current_user.is_teacher:
             return redirect(url_for('teacher_dashboard'))
-        else:
-            return redirect(url_for('student_dashboard'))
+        # Student accounts are no longer supported; clear any stale session.
+        logout_user()
     if session.get('counselor_access'):
         return redirect(url_for('login'))
     counselors = User.query.filter_by(role='counselor', is_admin=False).all()
@@ -560,22 +562,34 @@ def teacher_refer():
     department = request.form.get('department')
     reason = request.form.get('reason')
     purpose = request.form.get('purpose', '').strip()
-    
+
+    counselor = None
+    if counselor_id and str(counselor_id).isdigit():
+        counselor = User.query.filter_by(id=int(counselor_id), role='counselor', is_admin=False).first()
+    if not counselor:
+        flash('Please choose a valid counselor.', 'danger')
+        return redirect(url_for('teacher_refer'))
+
     combined_purpose = f"{reason}: {purpose}" if purpose else reason
-    
-    # We'll create a special 'referral' appointment. 
-    # Since it's a referral, it doesn't have a fixed time yet, 
-    # but the system requires start_time/end_time/date.
-    # For now, we'll set it to a placeholder date (today) and mark it as 'pending'.
-    # Alternatively, we could let teachers pick a time, but usually referrals are handled by counselors later.
-    # Let's just set it to today at a placeholder time 00:00.
-    
+
+    # A referral does not reserve a real slot yet (the counselor schedules it
+    # later), but the system requires a date/time. Give each referral a unique
+    # placeholder time on today's date so that a second referral to the same
+    # counselor on the same day does not violate the
+    # (counselor_id, date, start_time) unique constraint.
+    placeholder_offset = Appointment.query.filter_by(
+        counselor_id=counselor.id,
+        date=date.today()
+    ).count()
+    placeholder_start = (datetime.combine(date.today(), time(0, 0)) + timedelta(minutes=placeholder_offset)).time()
+    placeholder_end = (datetime.combine(date.today(), placeholder_start) + timedelta(minutes=30)).time()
+
     appointment = Appointment(
-        counselor_id=counselor_id,
+        counselor_id=counselor.id,
         referred_by_id=current_user.id,
         date=date.today(),
-        start_time=time(0, 0),
-        end_time=time(0, 30),
+        start_time=placeholder_start,
+        end_time=placeholder_end,
         purpose=f"[REFERRAL by {current_user.full_name}] {combined_purpose}",
         first_name=first_name,
         last_name=last_name,
@@ -586,9 +600,14 @@ def teacher_refer():
         is_guest=True,
         status='pending'
     )
-    db.session.add(appointment)
-    db.session.commit()
-    
+    try:
+        db.session.add(appointment)
+        db.session.commit()
+    except IntegrityError:
+        db.session.rollback()
+        flash('Unable to submit this referral right now. Please try again.', 'danger')
+        return redirect(url_for('teacher_refer'))
+
     flash('Student referral submitted successfully.', 'success')
     return redirect(url_for('teacher_dashboard'))
 
@@ -606,6 +625,9 @@ def login():
         if user and (user.is_counselor or user.is_teacher) and user.check_password(password):
             login_user(user)
             next_page = request.args.get('next')
+            # Only allow same-site relative redirects to avoid an open redirect.
+            if next_page and urlparse(next_page).netloc:
+                next_page = None
             flash(f'Welcome back, {user.full_name}!', 'success')
             if user.is_counselor:
                 return redirect(next_page or url_for('counselor_dashboard'))
@@ -658,22 +680,45 @@ def counselor_dashboard():
         counselor_id=current_user.id
     ).filter(BlockedTime.date >= today).order_by(BlockedTime.date, BlockedTime.start_time).all()
 
-    counselor_accounts = None
-    teacher_accounts = None
-    if current_user.is_admin:
-        counselor_accounts = User.query.filter_by(
-            role='counselor', is_admin=False
-        ).order_by(User.full_name).all()
-        teacher_accounts = User.query.filter_by(
-            role='teacher'
-        ).order_by(User.full_name).all()
-
     return render_template('counselor_dashboard.html',
                            appointments=upcoming_appointments,
                            pending_appointments=pending_appointments,
-                           blocked_times=upcoming_blocked,
-                           counselor_accounts=counselor_accounts,
-                           teacher_accounts=teacher_accounts)
+                           blocked_times=upcoming_blocked)
+
+
+ACCOUNT_ROLES = {
+    'students': ('student', 'Students'),
+    'teachers': ('teacher', 'Teachers'),
+    'counselors': ('counselor', 'Counselors'),
+}
+
+
+@app.route('/admin/users/<role>')
+@login_required
+def admin_users(role):
+    if not current_user.is_admin:
+        abort(403)
+    if role not in ACCOUNT_ROLES:
+        abort(404)
+
+    role_value, role_label = ACCOUNT_ROLES[role]
+    query = User.query.filter_by(role=role_value)
+    if role_value == 'counselor':
+        # The administrator account is a counselor but is not a team member.
+        query = query.filter_by(is_admin=False)
+    accounts = query.order_by(User.full_name).all()
+
+    counts = {
+        'students': User.query.filter_by(role='student').count(),
+        'teachers': User.query.filter_by(role='teacher').count(),
+        'counselors': User.query.filter_by(role='counselor', is_admin=False).count(),
+    }
+
+    return render_template('admin_users.html',
+                           role=role,
+                           role_label=role_label,
+                           accounts=accounts,
+                           counts=counts)
 
 
 @app.route('/counselor/history')
@@ -804,8 +849,7 @@ def update_appointment(appointment_id, action):
     db.session.commit()
     if current_user.is_counselor:
         return redirect(url_for('counselor_dashboard'))
-    else:
-        return redirect(url_for('student_dashboard'))
+    return redirect(url_for('index'))
 
 
 @app.route('/appointment/<int:appointment_id>/summary', methods=['POST'])
@@ -860,10 +904,12 @@ def guest_has_active_appointment_hash(first_name, last_name, birthday_str):
         bd = datetime.strptime(birthday_str, '%Y-%m-%d').date()
     except Exception:
         return False
+    first_name = (first_name or '').strip()
+    last_name = (last_name or '').strip()
     return Appointment.query.filter(
         Appointment.is_guest == True,
-        Appointment.first_name == first_name.strip() if first_name else None,
-        Appointment.last_name == last_name.strip() if last_name else None,
+        Appointment.first_name == first_name,
+        Appointment.last_name == last_name,
         Appointment.birthday == bd,
         Appointment.status.in_(['pending', 'approved'])
     ).first() is not None

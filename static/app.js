@@ -83,6 +83,30 @@
 })();
 
 (function() {
+    document.addEventListener('change', function(e) {
+        if (!e.target || e.target.id !== 'historySort') return;
+
+        var list = document.getElementById('historyList');
+        if (!list) return;
+
+        var entries = Array.prototype.slice.call(list.querySelectorAll('.history-entry'));
+        var order = e.target.value;
+
+        entries.sort(function(a, b) {
+            var ka = a.getAttribute('data-sort') || '';
+            var kb = b.getAttribute('data-sort') || '';
+            if (ka === kb) return 0;
+            if (order === 'oldest') return ka < kb ? -1 : 1;
+            return ka > kb ? -1 : 1;
+        });
+
+        for (var i = 0; i < entries.length; i++) {
+            list.appendChild(entries[i]);
+        }
+    });
+})();
+
+(function() {
     document.addEventListener('click', function(e) {
         var head = e.target.closest ? e.target.closest('[data-history-toggle]') : null;
         if (!head) return;

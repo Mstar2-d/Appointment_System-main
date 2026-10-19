@@ -8,6 +8,21 @@
     <div class="section-label" style="margin-bottom: 0.75rem;">Dashboard</div>
     <h2 style="font-size: 2.25rem; margin-bottom: 2.5rem; border: none; padding: 0;">Overview</h2>
 
+    {% if current_user.is_admin %}
+    <div class="card">
+        <div class="section-label" style="margin-bottom: 0.5rem;">Administration</div>
+        <h2 style="border: none; padding: 0; margin: 0 0 0.25rem 0; font-size: 1.6rem;">User Accounts</h2>
+        <p style="color: var(--text-secondary); margin-bottom: 1.5rem; font-size: 0.92rem;">
+            Students, teachers, and counselors each have their own list.
+        </p>
+        <div style="display: flex; gap: 0.6rem; flex-wrap: wrap;">
+            <a href="{{ url_for('admin_users', role='students') }}" class="btn btn-secondary" style="padding: 0.7rem 1.2rem; font-size: 0.85rem;">Students</a>
+            <a href="{{ url_for('admin_users', role='teachers') }}" class="btn btn-secondary" style="padding: 0.7rem 1.2rem; font-size: 0.85rem;">Teachers</a>
+            <a href="{{ url_for('admin_users', role='counselors') }}" class="btn btn-secondary" style="padding: 0.7rem 1.2rem; font-size: 0.85rem;">Counselors</a>
+        </div>
+    </div>
+    {% endif %}
+
     {% if not current_user.is_admin %}
     <div class="stats-grid">
         <div class="stat-card">
@@ -98,96 +113,6 @@
         {% else %}
             <div class="empty-state">
                 <p>No blocked times. You are fully available during working hours (09:00 AM – 05:00 PM).</p>
-            </div>
-        {% endif %}
-    </div>
-    {% endif %}
-
-    {% if current_user.is_admin %}
-    <div class="card">
-        <div class="section-label" style="margin-bottom: 0.5rem;">Team</div>
-        <h2 style="border: none; padding: 0; margin: 0 0 0.25rem 0; font-size: 1.6rem;">Counselor Accounts</h2>
-        <p style="color: var(--text-secondary); margin-bottom: 1.5rem; font-size: 0.92rem;">
-            Overview of all registered counselor accounts.
-        </p>
-        {% if counselor_accounts %}
-            <div class="table-responsive">
-                <table class="table">
-                    <thead>
-                        <tr>
-                            <th>Name</th>
-                            <th>Username</th>
-                            <th>Email</th>
-                            <th>Phone</th>
-                            <th>Specialty</th>
-                            <th>Actions</th>
-                        </tr>
-                    </thead>
-                    <tbody>
-                        {% for account in counselor_accounts %}
-                            <tr>
-                                <td style="font-weight: 600;">{{ account.full_name }}</td>
-                                <td>{{ account.username }}</td>
-                                <td style="color: var(--text-secondary);">{{ account.email }}</td>
-                                <td style="color: var(--text-secondary);">{{ account.phone if account.phone else '—' }}</td>
-                                <td style="color: var(--text-secondary);">{{ account.specialty if account.specialty else '—' }}</td>
-                                <td>
-                                    <form method="POST" action="{{ url_for('delete_counselor', user_id=account.id) }}" onsubmit="return confirm('Are you sure you want to delete this counselor account? All their appointments and blocked times will also be removed.');">
-                                        <button type="submit" class="btn btn-danger" style="padding: 0.5rem 0.95rem; font-size: 0.82rem;">Delete</button>
-                                    </form>
-                                </td>
-                            </tr>
-                        {% endfor %}
-                    </tbody>
-                </table>
-            </div>
-        {% else %}
-            <div class="empty-state">
-                <p>No counselor accounts yet.</p>
-            </div>
-        {% endif %}
-    </div>
-
-    <div class="card">
-        <div class="section-label" style="margin-bottom: 0.5rem;">Team</div>
-        <h2 style="border: none; padding: 0; margin: 0 0 0.25rem 0; font-size: 1.6rem;">Teacher Accounts</h2>
-        <p style="color: var(--text-secondary); margin-bottom: 1.5rem; font-size: 0.92rem;">
-            Overview of all registered teacher accounts.
-        </p>
-        {% if teacher_accounts %}
-            <div class="table-responsive">
-                <table class="table">
-                    <thead>
-                        <tr>
-                            <th>Name</th>
-                            <th>Username</th>
-                            <th>Email</th>
-                            <th>Phone</th>
-                            <th>Department</th>
-                            <th>Actions</th>
-                        </tr>
-                    </thead>
-                    <tbody>
-                        {% for account in teacher_accounts %}
-                            <tr>
-                                <td style="font-weight: 600;">{{ account.full_name }}</td>
-                                <td>{{ account.username }}</td>
-                                <td style="color: var(--text-secondary);">{{ account.email }}</td>
-                                <td style="color: var(--text-secondary);">{{ account.phone if account.phone else '—' }}</td>
-                                <td style="color: var(--text-secondary);">{{ account.specialty if account.specialty else '—' }}</td>
-                                <td>
-                                    <form method="POST" action="{{ url_for('delete_teacher', user_id=account.id) }}" onsubmit="return confirm('Are you sure you want to delete this teacher account? All their referrals will also be removed.');">
-                                        <button type="submit" class="btn btn-danger" style="padding: 0.5rem 0.95rem; font-size: 0.82rem;">Delete</button>
-                                    </form>
-                                </td>
-                            </tr>
-                        {% endfor %}
-                    </tbody>
-                </table>
-            </div>
-        {% else %}
-            <div class="empty-state">
-                <p>No teacher accounts yet.</p>
             </div>
         {% endif %}
     </div>

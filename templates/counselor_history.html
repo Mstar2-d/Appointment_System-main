@@ -18,13 +18,19 @@
     </div>
 
     {% if appointments %}
-        <input type="search" id="historySearch" class="history-search" autocomplete="off"
-               aria-label="Search appointment history"
-               placeholder="Search by name, department, or year level…">
+        <div class="history-controls">
+            <input type="search" id="historySearch" class="history-search" autocomplete="off"
+                   aria-label="Search appointment history"
+                   placeholder="Search by name, department, or year level…">
+            <select id="historySort" class="history-sort" aria-label="Sort appointment history">
+                <option value="recent">Recent</option>
+                <option value="oldest">Oldest</option>
+            </select>
+        </div>
 
         <div class="history-list" id="historyList">
             {% for appt in appointments %}
-                <div class="history-entry" data-search="{{ appt.display_name }} {{ appt.department or '' }} {{ appt.year_level or '' }}">
+                <div class="history-entry" data-search="{{ appt.display_name }} {{ appt.department or '' }} {{ appt.year_level or '' }}" data-sort="{{ appt.date.strftime('%Y%m%d') }}{{ appt.start_time.strftime('%H%M') }}">
                     <button type="button" class="history-head" data-history-toggle aria-expanded="false">
                         <div class="history-head-main">
                             <span class="history-date">{{ appt.date|fmt_long }} · {{ appt.time_str }}</span>
