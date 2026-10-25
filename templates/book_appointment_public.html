@@ -25,7 +25,7 @@
 
     <div class="info-box" style="margin-bottom: 2.25rem;">
         <strong>One-time appointment process</strong>
-        <p>1. Pick a date and time · 2. Fill in your student information · 3. Tell us how you're feeling · 4. Submit and wait for counselor approval. No account required.</p>
+        <p>1. Pick a date and time · 2. Fill in your student information · 3. Tell us how you're feeling · 4. Submit your appointment — no approval needed. No account required.</p>
     </div>
 
     <form method="POST" action="{{ url_for('book_appointment_public', counselor_id=counselor.id, date=selected_date.strftime('%Y-%m-%d')) }}" id="bookingForm">

@@ -1,6 +1,6 @@
 {% extends "base.html" %}
 
-{% block title %}Appointment Request Submitted{% endblock %}
+{% block title %}Appointment Submitted{% endblock %}
 
 {% block content %}
 <div class="auth-container" style="max-width: 620px;">
@@ -10,9 +10,9 @@
                 <polyline points="20 6 9 17 4 12"></polyline>
             </svg>
         </div>
-        <h2 style="text-align: center;">Appointment Request Submitted!</h2>
+        <h2 style="text-align: center;">Appointment Submitted!</h2>
         <p style="text-align: center; margin-bottom: 2rem; color: var(--text-secondary);">
-            Thank you, <strong style="color: var(--text-primary);">{{ appointment.display_name }}</strong>. Your appointment with <strong style="color: var(--accent);">{{ appointment.counselor.full_name }}</strong> is waiting for approval.
+            Thank you, <strong style="color: var(--text-primary);">{{ appointment.display_name }}</strong>. Your appointment with <strong style="color: var(--accent);">{{ appointment.counselor.full_name }}</strong> has been submitted.
         </p>
 
         <div class="card" style="margin-bottom: 1.5rem; padding: 1.5rem; border-radius: var(--radius-md);">
@@ -32,7 +32,7 @@
                 <div>
                     <div style="font-size: 0.78rem; color: var(--text-tertiary); text-transform: uppercase; letter-spacing: 0.04em; margin-bottom: 0.25rem;">Status</div>
                     <div>
-                        <span class="badge badge-pending">Pending Approval</span>
+                        <span class="badge badge-approved">Submitted</span>
                     </div>
                 </div>
                 {% if appointment.department or appointment.year_level or appointment.section %}
@@ -62,9 +62,10 @@
 
         <div class="info-box" style="margin-bottom: 1.75rem;">
             <strong>What happens next?</strong>
-            <p>1. Your counselor will review your request and approve or suggest a different time.<br>
-               2. Save your <strong>Reference #APT-{{ '%06d'|format(appointment.id) }}</strong>.<br>
-               3. If you provided an email or phone, we will send you status updates.</p>
+            <p>1. Your appointment has been submitted — no approval needed.<br>
+               2. Please arrive on time for your scheduled slot.<br>
+               3. Save your <strong>Reference #APT-{{ '%06d'|format(appointment.id) }}</strong>.<br>
+               4. If you provided an email or phone, we will send you status updates.</p>
         </div>
 
         <div style="display: flex; gap: 0.75rem; flex-wrap: wrap;">

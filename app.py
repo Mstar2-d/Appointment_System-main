@@ -1053,10 +1053,11 @@ def book_appointment_public(counselor_id):
             contact_phone=contact_phone,
             guest_student_id=student_id_val,
             is_guest=True,
+            status='approved',
         )
         db.session.add(appointment)
         db.session.commit()
-        flash('Appointment request submitted! Please wait for counselor approval. You may check back later for updates.', 'success')
+        flash('Your appointment has been submitted.', 'success')
         return redirect(url_for('booking_confirmation', appointment_id=appointment.id))
 
     dates = generate_weekdays(today, 14)
