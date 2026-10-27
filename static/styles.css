@@ -104,22 +104,19 @@ button:focus-visible,
 .brand-logo {
     position: relative;
     height: 48px;
+    width: 48px;
     display: flex;
     align-items: center;
     justify-content: center;
     flex-shrink: 0;
     transition: transform 0.3s ease;
+    border-radius: 50%;
+    overflow: hidden;
+    background: #FFFFFF;
 }
 
 .brand-logo:hover {
     transform: scale(1.02);
-}
-
-.brand-logo img {
-    height: 100%;
-    width: auto;
-    object-fit: contain;
-    display: block;
 }
 
 .brand-logo.counselor-mode {
@@ -128,6 +125,14 @@ button:focus-visible,
 
 .brand-logo.counselor-mode:hover {
     filter: drop-shadow(0 0 12px rgba(0, 91, 181, 0.45));
+}
+
+.brand-logo img {
+    height: 100%;
+    width: 100%;
+    object-fit: cover;
+    display: block;
+    transition: filter 0.3s ease;
 }
 
 .counselor-badge {
@@ -727,6 +732,40 @@ button:focus-visible,
 
 .auth-link a:hover {
     border-color: var(--orange);
+}
+
+.auth-divider {
+    display: flex;
+    align-items: center;
+    text-align: center;
+    margin: 1.5rem 0;
+    color: var(--text-muted);
+    font-size: 0.8rem;
+    font-weight: 600;
+    text-transform: uppercase;
+    letter-spacing: 0.05em;
+}
+
+.auth-divider::before,
+.auth-divider::after {
+    content: '';
+    flex: 1;
+    border-bottom: 1px solid var(--border-light);
+}
+
+.auth-divider span {
+    padding: 0 0.75rem;
+}
+
+.btn-google:hover {
+    background: #f8f9fa !important;
+    border-color: #c6c9cc !important;
+    box-shadow: 0 1px 2px rgba(60, 64, 67, 0.1), 0 1px 3px 1px rgba(60, 64, 67, 0.15);
+}
+
+.btn-google:active {
+    background: #eeeeee !important;
+    box-shadow: 0 1px 2px rgba(60, 64, 67, 0.1);
 }
 
 /* ---------- Stats ---------- */

@@ -8,6 +8,7 @@ from urllib.parse import urlparse
 from flask import Flask, render_template, request, redirect, url_for, flash, abort, session
 from flask_sqlalchemy import SQLAlchemy
 from flask_login import LoginManager, UserMixin, login_user, login_required, logout_user, current_user
+from authlib.integrations.flask_client import OAuth
 from sqlalchemy.exc import IntegrityError
 from werkzeug.security import generate_password_hash, check_password_hash
 
@@ -33,6 +34,26 @@ db = SQLAlchemy(app)
 login_manager = LoginManager(app)
 login_manager.login_view = 'login'
 login_manager.login_message_category = 'info'
+
+oauth = OAuth(app)
+
+GOOGLE_CLIENT_ID = os.environ.get('GOOGLE_CLIENT_ID', '').strip()
+GOOGLE_CLIENT_SECRET = os.environ.get('GOOGLE_CLIENT_SECRET', '').strip()
+
+google = oauth.register(
+    name='google',
+    client_id=GOOGLE_CLIENT_ID,
+    client_secret=GOOGLE_CLIENT_SECRET,
+    server_metadata_url='https://accounts.google.com/.well-known/openid-configuration',
+    client_kwargs={'scope': 'openid email profile'},
+)
+
+
+def google_login_is_configured():
+    """True only when real Google OAuth credentials are present."""
+    placeholders = {'', 'your-google-client-id', 'your-google-client-secret'}
+    return (GOOGLE_CLIENT_ID not in placeholders
+            and GOOGLE_CLIENT_SECRET not in placeholders)
 
 
 def email_is_configured():
@@ -329,9 +350,7 @@ def generate_available_slots(counselor_id, date, slot_minutes=DEFAULT_SLOT_MINUT
             current = slot_end
             continue
 
-        for appt in Appointment.query.filter_by(counselor_id=counselor_id, date=date).filter(
-            Appointment.status.in_(['pending', 'approved'])
-        ).all():
+        for appt in Appointment.query.filter_by(counselor_id=counselor_id, date=date).all():
             if times_overlap(slot_start_t, slot_end_t, appt.start_time, appt.end_time):
                 overlap = True
                 break
@@ -636,6 +655,45 @@ def login():
             return redirect(next_page or url_for('index'))
         flash('Invalid username or password', 'danger')
     return render_template('login.html')
+
+
+@app.route('/login/google')
+def google_login():
+    if not google_login_is_configured():
+        flash('Google Login is not configured. Please contact the administrator.', 'danger')
+        return redirect(url_for('login'))
+    redirect_uri = url_for('google_authorize', _external=True)
+    return google.authorize_redirect(redirect_uri)
+
+
+@app.route('/login/google/authorize')
+def google_authorize():
+    if not google_login_is_configured():
+        flash('Google Login is not configured. Please contact the administrator.', 'danger')
+        return redirect(url_for('login'))
+
+    token = google.authorize_access_token()
+    user_info = token.get('userinfo') or google.userinfo()
+    email = (user_info or {}).get('email')
+
+    if not email:
+        flash('Failed to retrieve your email from Google.', 'danger')
+        return redirect(url_for('login'))
+
+    user = User.query.filter_by(email=email).first()
+    if not user:
+        flash('No account is linked to this Google email. Please contact the administrator.', 'danger')
+        return redirect(url_for('login'))
+
+    if not (user.is_counselor or user.is_teacher):
+        flash('This account does not have access to the dashboard.', 'danger')
+        return redirect(url_for('login'))
+
+    login_user(user)
+    flash(f'Welcome back, {user.full_name}!', 'success')
+    if user.is_counselor:
+        return redirect(url_for('counselor_dashboard'))
+    return redirect(url_for('teacher_dashboard'))
 
 
 @app.route('/logout')
@@ -1017,7 +1075,7 @@ def book_appointment_public(counselor_id):
             counselor_id=counselor_id,
             date=selected_date,
             start_time=slot_start
-        ).filter(Appointment.status.in_(['pending', 'approved'])).first()
+        ).first()
         if existing:
             flash('This slot is no longer available.', 'danger')
             return redirect(url_for('book_appointment_public', counselor_id=counselor_id, date=selected_date.strftime('%Y-%m-%d')))

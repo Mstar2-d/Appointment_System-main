@@ -57,12 +57,30 @@
         </div>
 
         {% if appointments %}
-            <div style="display: flex; flex-direction: column; gap: 1.25rem;">
+            <div class="history-list">
                 {% for appt in appointments %}
-                    <div style="border: 1px solid var(--border-light); border-radius: var(--radius-md); padding: 1.5rem 1.75rem; background: var(--bg-card); transition: all 0.3s ease;"
-                         onmouseover="this.style.borderColor='var(--border)'; this.style.boxShadow='0 10px 30px rgba(var(--shadow-rgb), 0.06)';"
-                         onmouseout="this.style.borderColor='var(--border-light)'; this.style.boxShadow='none';">
-                        {% include '_appointment_card.html' %}
+                    <div class="history-entry">
+                        <button type="button" class="history-head" data-history-toggle aria-expanded="false">
+                            <div class="history-head-main">
+                                <span class="history-date">{{ appt.date|fmt_long }} · {{ appt.time_str }}</span>
+                                <span class="history-name">{{ appt.display_name }}{% if appt.department or appt.year_level %}<span class="history-sub"> · {% if appt.department %}{{ appt.department }}{% endif %}{% if appt.department and appt.year_level %} · {% endif %}{% if appt.year_level %}{{ appt.year_level }}{% endif %}</span>{% endif %}</span>
+                            </div>
+                            <div class="history-head-meta">
+                                {% if appt.status == 'pending' %}
+                                    <span class="badge badge-pending">Pending</span>
+                                {% elif appt.status == 'approved' %}
+                                    <span class="badge badge-approved">Approved</span>
+                                {% elif appt.status == 'rejected' %}
+                                    <span class="badge badge-rejected">Rejected</span>
+                                {% elif appt.status == 'completed' %}
+                                    <span class="badge badge-completed">Completed</span>
+                                {% endif %}
+                                <svg class="history-chevron" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="6 9 12 15 18 9"></polyline></svg>
+                            </div>
+                        </button>
+                        <div class="history-body" hidden>
+                            {% include '_appointment_card.html' %}
+                        </div>
                     </div>
                 {% endfor %}
             </div>

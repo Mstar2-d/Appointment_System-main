@@ -12,7 +12,10 @@
 <body>
     <nav class="navbar">
         <a href="{{ url_for('index') }}" class="brand" id="appTitle" title="{{ 'Press Ctrl+` to switch to Student access' if session.get('counselor_access') else 'Press Ctrl+` for Counselor access' }}">
-            <div class="brand-logo{% if session.get('counselor_access') %} counselor-mode{% endif %}">
+            <div style="position: relative;">
+                <div class="brand-logo{% if session.get('counselor_access') %} counselor-mode{% endif %}">
+                    <img src="{{ url_for('static', filename='img/logo.jpg') }}" alt="UniReach Logo">
+                </div>
                 {% if session.get('counselor_access') %}<span class="counselor-badge" title="Counselor mode active">C</span>{% endif %}
             </div>
             <div class="brand-text">
