@@ -107,25 +107,23 @@
             <div style="font-size: 0.78rem; color: var(--success); text-transform: uppercase; letter-spacing: 0.04em; font-weight: 600; margin-bottom: 0.4rem;">Locked — session finished</div>
             <div style="width: 100%; border: 1.5px solid var(--border); border-radius: var(--radius-sm); padding: 0.85rem 1rem; font-size: 0.9rem; line-height: 1.5; background: var(--bg-secondary); color: var(--text-primary); white-space: pre-wrap;">{{ appt.session_summary if appt.session_summary else 'No summary was written for this session.' }}</div>
         {% else %}
-        <form method="POST" action="{{ url_for('save_session_summary', appointment_id=appt.id) }}">
             <label for="summary_{{ appt.id }}" style="position: absolute; left: -9999px;">Session summary</label>
             <textarea id="summary_{{ appt.id }}" name="session_summary" rows="3" maxlength="2000"
+                      {% if appt.status == 'approved' %}form="completeForm_{{ appt.id }}"{% else %}disabled{% endif %}
                       style="width: 100%; border: 1.5px solid var(--border); border-radius: var(--radius-sm); padding: 0.85rem 1rem; font-size: 0.9rem; line-height: 1.5; background: var(--bg-card); color: var(--text-primary); transition: all 0.2s ease; resize: vertical; margin-bottom: 0.75rem; font-family: 'Inter', sans-serif;"
                       placeholder="Summarize the session and suggest what the teacher can do to support this student..."
                       onfocus="this.style.borderColor='var(--accent)'; this.style.boxShadow='0 0 0 4px rgba(var(--accent-rgb), 0.1)';"
                       onblur="this.style.borderColor='var(--border)'; this.style.boxShadow='none';">{{ appt.session_summary or '' }}</textarea>
-            <div style="display: flex; align-items: center; gap: 0.75rem; flex-wrap: wrap;">
-                <button type="submit" class="btn btn-primary" style="padding: 0.6rem 1.25rem; font-size: 0.82rem; border-radius: 20px; box-shadow: 0 4px 12px rgba(var(--accent-rgb), 0.2);">
-                    Save Summary
-                </button>
-                {% if appt.session_summary %}
-                    <div style="display: flex; align-items: center; gap: 0.35rem; color: var(--success); font-weight: 600; font-size: 0.78rem;">
-                        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"></polyline></svg>
-                        Saved
-                    </div>
-                {% endif %}
-            </div>
-        </form>
+            {% if appt.status == 'approved' %}
+                <div style="display: flex; align-items: center; gap: 0.35rem; color: var(--text-secondary); font-size: 0.78rem;">
+                    <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M19 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11l5 5v11a2 2 0 0 1-2 2z"></path><polyline points="17 21 17 13 7 13 7 21"></polyline><polyline points="7 3 7 8 15 8"></polyline></svg>
+                    Saved automatically when you mark the session as complete.
+                </div>
+            {% else %}
+                <div style="color: var(--text-secondary); font-size: 0.78rem;">
+                    Approve this appointment to write a session summary.
+                </div>
+            {% endif %}
         {% endif %}
     </div>
 
@@ -138,7 +136,7 @@
                 <button type="submit" class="btn btn-danger" style="padding: 0.55rem 1.1rem; font-size: 0.85rem;">✕ Reject</button>
             </form>
         {% elif appt.status == 'approved' %}
-            <form method="POST" action="{{ url_for('update_appointment', appointment_id=appt.id, action='complete') }}">
+            <form id="completeForm_{{ appt.id }}" method="POST" action="{{ url_for('update_appointment', appointment_id=appt.id, action='complete') }}">
                 <button type="submit" class="btn btn-info" style="padding: 0.55rem 1.1rem; font-size: 0.85rem;">✓ Mark Complete</button>
             </form>
         {% endif %}

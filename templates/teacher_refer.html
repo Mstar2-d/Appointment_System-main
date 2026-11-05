@@ -29,23 +29,23 @@
 
         <div class="form-row">
             <div class="form-group">
-                <label for="first_name">Student First Name</label>
+                <label for="first_name">Student First Name <span style="color: var(--danger);">*</span></label>
                 <input type="text" id="first_name" name="first_name" required placeholder="Enter first name">
             </div>
             <div class="form-group">
-                <label for="last_name">Student Last Name</label>
+                <label for="last_name">Student Last Name <span style="color: var(--danger);">*</span></label>
                 <input type="text" id="last_name" name="last_name" required placeholder="Enter last name">
             </div>
         </div>
 
         <div class="form-group">
-            <label for="student_id">Student ID</label>
-            <input type="text" id="student_id" name="student_id" placeholder="e.g. 2025-0000">
+            <label for="student_id">Student ID <span style="color: var(--danger);">*</span></label>
+            <input type="text" id="student_id" name="student_id" required placeholder="e.g. 2025-0000">
         </div>
 
         <div class="form-row">
             <div class="form-group">
-                <label for="year_level">Year Level</label>
+                <label for="year_level">Year Level <span style="color: var(--danger);">*</span></label>
                 <select id="year_level" name="year_level" required>
                     <option value="">— Select —</option>
                     <option value="1st yr">1st yr</option>
@@ -55,13 +55,13 @@
                 </select>
             </div>
             <div class="form-group">
-                <label for="section">Section</label>
-                <input type="text" id="section" name="section" placeholder="e.g. Mahogany, BSCS-3B">
+                <label for="section">Section <span style="color: var(--danger);">*</span></label>
+                <input type="text" id="section" name="section" required placeholder="e.g. Mahogany, BSCS-3B">
             </div>
         </div>
 
         <div class="form-group">
-            <label for="department">Department</label>
+            <label for="department">Department <span style="color: var(--danger);">*</span></label>
             <select id="department" name="department" required>
                 <option value="">— Select Department —</option>
                 <option value="College of Computing Studies">College of Computing Studies</option>
@@ -71,7 +71,7 @@
         </div>
 
         <div class="form-group">
-            <label for="reason">Reason for Referral</label>
+            <label for="reason">Reason for Referral <span style="color: var(--danger);">*</span></label>
             <select id="reason" name="reason" required>
                 <option value="">— Select Reason —</option>
                 <option value="Poor Academic Performance">Poor Academic Performance</option>

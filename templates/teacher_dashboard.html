@@ -69,58 +69,57 @@
         <h3 style="margin-bottom: 1.5rem; font-size: 1.4rem;">Your Referrals</h3>
 
         {% if referrals %}
-            <div class="table-responsive">
-                <table class="table">
-                    <thead>
-                        <tr>
-                            <th>Student</th>
-                            <th>Counselor</th>
-                            <th>Status</th>
-                            <th>Date Submitted</th>
-                        </tr>
-                    </thead>
-                    <tbody>
-                        {% for ref in referrals %}
-                            <tr>
-                                <td>
-                                    <div style="font-weight: 600;">{{ ref.display_name }}</div>
-                                    <div style="font-size: 0.75rem; color: var(--text-secondary);">
-                                        {{ ref.guest_student_id }} · {{ ref.year_level }}
+            <div class="history-controls">
+                <input type="search" id="historySearch" class="history-search" autocomplete="off"
+                       aria-label="Search referrals"
+                       placeholder="Search by Last Name, Year, Department, or Student ID…">
+            </div>
+
+            <div class="history-list" id="historyList">
+                {% for ref in referrals %}
+                    <div class="history-entry" data-search="{{ ref.last_name or '' }} {{ ref.year_level or '' }} {{ ref.department or '' }} {{ ref.guest_student_id or '' }}">
+                        <button type="button" class="history-head" data-history-toggle aria-expanded="false">
+                            <div class="history-head-main">
+                                <span class="history-date">{{ ref.date.strftime('%b %d, %Y') }}</span>
+                                <span class="history-name">{{ ref.display_name }}{% if ref.guest_student_id or ref.year_level %}<span class="history-sub"> · {% if ref.guest_student_id %}{{ ref.guest_student_id }}{% endif %}{% if ref.guest_student_id and ref.year_level %} · {% endif %}{% if ref.year_level %}{{ ref.year_level }}{% endif %}</span>{% endif %}</span>
+                            </div>
+                            <div class="history-head-meta">
+                                {% if ref.status == 'pending' %}
+                                    <span class="badge badge-pending">Pending</span>
+                                {% elif ref.status == 'approved' %}
+                                    <span class="badge badge-approved">Approved</span>
+                                {% elif ref.status == 'rejected' %}
+                                    <span class="badge badge-rejected">Rejected</span>
+                                {% elif ref.status == 'completed' %}
+                                    <span class="badge badge-completed">Completed</span>
+                                {% endif %}
+                                <svg class="history-chevron" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="6 9 12 15 18 9"></polyline></svg>
+                            </div>
+                        </button>
+                        <div class="history-body" hidden>
+                            <div style="display: flex; flex-direction: column; gap: 0.75rem;">
+                                <div>
+                                    <div style="font-size: 0.75rem; text-transform: uppercase; color: var(--text-tertiary); font-weight: 600; margin-bottom: 0.2rem;">Assigned Counselor</div>
+                                    <div style="font-size: 0.9rem; color: var(--text-primary);">{{ ref.counselor.full_name }}</div>
+                                </div>
+                                <div style="background: var(--bg-secondary); padding: 0.75rem 1rem; border-radius: 8px; font-size: 0.88rem; color: var(--text-primary); border-left: 3px solid var(--accent-hover);">
+                                    <strong style="color: var(--text-tertiary); font-size: 0.75rem; text-transform: uppercase;">Reason:</strong><br>
+                                    {{ ref.purpose.replace('[REFERRAL by ' + current_user.full_name + '] ', '') }}
+                                </div>
+                                {% if ref.session_summary %}
+                                    <div style="background: var(--yellow-soft); padding: 0.75rem 1rem; border-radius: 8px; font-size: 0.88rem; color: var(--text-primary); border-left: 3px solid var(--gold);">
+                                        <strong style="color: var(--accent-hover); font-size: 0.75rem; text-transform: uppercase;">Counselor Session Summary:</strong><br>
+                                        <span style="white-space: pre-wrap;">{{ ref.session_summary }}</span>
                                     </div>
-                                </td>
-                                <td style="font-size: 0.9rem;">{{ ref.counselor.full_name }}</td>
-                                <td>
-                                    {% if ref.status == 'pending' %}
-                                        <span class="badge badge-pending">Pending</span>
-                                    {% elif ref.status == 'approved' %}
-                                        <span class="badge badge-approved">Approved</span>
-                                    {% elif ref.status == 'rejected' %}
-                                        <span class="badge badge-rejected">Rejected</span>
-                                    {% elif ref.status == 'completed' %}
-                                        <span class="badge badge-completed">Completed</span>
-                                    {% endif %}
-                                </td>
-                                <td style="font-size: 0.85rem; color: var(--text-secondary);">
-                                    {{ ref.date.strftime('%b %d, %Y') }}
-                                </td>
-                            </tr>
-                            <tr>
-                                <td colspan="4" style="padding-top: 0; padding-bottom: 1rem;">
-                                    <div style="background: var(--bg-secondary); padding: 0.75rem 1rem; border-radius: 8px; font-size: 0.88rem; color: var(--text-primary); border-left: 3px solid var(--accent-hover);">
-                                        <strong style="color: var(--text-tertiary); font-size: 0.75rem; text-transform: uppercase;">Reason:</strong><br>
-                                        {{ ref.purpose.replace('[REFERRAL by ' + current_user.full_name + '] ', '') }}
-                                    </div>
-                                    {% if ref.session_summary %}
-                                        <div style="background: var(--yellow-soft); padding: 0.75rem 1rem; border-radius: 8px; font-size: 0.88rem; color: var(--text-primary); border-left: 3px solid var(--gold); margin-top: 0.6rem;">
-                                            <strong style="color: var(--accent-hover); font-size: 0.75rem; text-transform: uppercase;">Counselor Session Summary:</strong><br>
-                                            <span style="white-space: pre-wrap;">{{ ref.session_summary }}</span>
-                                        </div>
-                                    {% endif %}
-                                </td>
-                            </tr>
-                        {% endfor %}
-                    </tbody>
-                </table>
+                                {% endif %}
+                            </div>
+                        </div>
+                    </div>
+                {% endfor %}
+            </div>
+
+            <div class="history-no-results" id="historyNoResults" style="display: none;">
+                <p>No referrals match your search.</p>
             </div>
         {% else %}
             <div class="empty-state">

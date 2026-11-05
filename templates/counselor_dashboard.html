@@ -3,6 +3,7 @@
 {% block title %}Counselor Dashboard{% endblock %}
 
 {% block content %}
+{% set mood_emojis = {'excellent': '😊', 'good': '🙂', 'okay': '😐', 'low': '😔', 'difficult': '😟', 'critical': '😢'} %}
 <!-- Account Overview Section (Hidden when adding accounts) -->
 <div id="accountOverview">
     <div class="section-label" style="margin-bottom: 0.75rem;">Dashboard</div>
@@ -64,6 +65,9 @@
                             <div class="history-head-main">
                                 <span class="history-date">{{ appt.date|fmt_long }} · {{ appt.time_str }}</span>
                                 <span class="history-name">{{ appt.display_name }}{% if appt.department or appt.year_level %}<span class="history-sub"> · {% if appt.department %}{{ appt.department }}{% endif %}{% if appt.department and appt.year_level %} · {% endif %}{% if appt.year_level %}{{ appt.year_level }}{% endif %}</span>{% endif %}</span>
+                                {% if appt.mood_rating %}
+                                    <span class="mood-chip" title="Pre-session mood: {{ appt.mood_rating|capitalize }}"><span class="mood-chip-emoji">{{ mood_emojis.get(appt.mood_rating, '🙂') }}</span> Feeling {{ appt.mood_rating }}</span>
+                                {% endif %}
                             </div>
                             <div class="history-head-meta">
                                 {% if appt.status == 'pending' %}

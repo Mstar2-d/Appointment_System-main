@@ -611,6 +611,10 @@ def teacher_refer():
     reason = request.form.get('reason')
     purpose = request.form.get('purpose', '').strip()
 
+    if not all([first_name, last_name, student_id, year_level, section, department, reason]):
+        flash('Please fill in all required fields.', 'danger')
+        return redirect(url_for('teacher_refer'))
+
     counselor = None
     if counselor_id and str(counselor_id).isdigit():
         counselor = User.query.filter_by(id=int(counselor_id), role='counselor', is_admin=False).first()
@@ -930,6 +934,8 @@ def update_appointment(appointment_id, action):
         flash('Appointment rejected.', 'info')
     elif action == 'complete' and current_user.is_counselor:
         appointment.status = 'completed'
+        summary = request.form.get('session_summary', '').strip()
+        appointment.session_summary = summary if summary else None
         flash('Appointment marked as completed.', 'success')
     elif action == 'cancel' and current_user.is_student:
         db.session.delete(appointment)
@@ -941,26 +947,6 @@ def update_appointment(appointment_id, action):
     if current_user.is_counselor:
         return redirect(url_for('counselor_dashboard'))
     return redirect(url_for('index'))
-
-
-@app.route('/appointment/<int:appointment_id>/summary', methods=['POST'])
-@login_required
-def save_session_summary(appointment_id):
-    if not current_user.is_counselor:
-        abort(403)
-    appointment = Appointment.query.get_or_404(appointment_id)
-    if appointment.counselor_id != current_user.id:
-        abort(403)
-
-    if appointment.status == 'completed':
-        flash('This session is already finished. The summary can no longer be edited.', 'danger')
-        return redirect(url_for('counselor_dashboard'))
-
-    summary = request.form.get('session_summary', '').strip()
-    appointment.session_summary = summary if summary else None
-    db.session.commit()
-    flash('Session summary saved. The referring teacher can now see it.', 'success')
-    return redirect(url_for('counselor_dashboard'))
 
 
 MOOD_OPTIONS = [
