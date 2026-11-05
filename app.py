@@ -175,13 +175,25 @@ def build_calendar_month(view_month, today, selected_date, counselor_id):
             disabled = is_weekend or is_past or before_min or after_max or not in_current_month
             is_selected = (d == selected_date) and in_current_month
             is_today = (d == today) and in_current_month
+            
+            # Check if today is past 5 PM
+            is_past_5pm = False
+            if is_today:
+                now = datetime.now()
+                if now.hour >= 17:
+                    is_past_5pm = True
+
             has_slots = False
             if in_current_month and is_weekday(d) and not before_min and not after_max:
-                try:
-                    slots = generate_available_slots(counselor_id, d)
-                    has_slots = len(slots) > 0
-                except Exception:
+                if is_past_5pm:
                     has_slots = False
+                else:
+                    try:
+                        slots = generate_available_slots(counselor_id, d)
+                        has_slots = len(slots) > 0
+                    except Exception:
+                        has_slots = False
+            
             row.append({
                 'date': d,
                 'day': d.day,
@@ -193,6 +205,7 @@ def build_calendar_month(view_month, today, selected_date, counselor_id):
                 'is_selected': is_selected,
                 'is_today': is_today,
                 'has_slots': has_slots,
+                'is_past_5pm': is_past_5pm,
             })
         rows.append(row)
 
@@ -333,6 +346,13 @@ def generate_available_slots(counselor_id, date, slot_minutes=DEFAULT_SLOT_MINUT
         slot_start_t = current.time()
         slot_end_t = slot_end.time()
 
+        # Skip lunch break (12:00 PM - 01:00 PM)
+        lunch_start = time(12, 0)
+        lunch_end = time(13, 0)
+        if times_overlap(slot_start_t, slot_end_t, lunch_start, lunch_end):
+            current = slot_end
+            continue
+
         if datetime.combine(date, slot_start_t) <= now:
             current = slot_end
             continue
@@ -409,14 +429,17 @@ app.jinja_env.filters['fmt_time'] = fmt_time
 
 @app.route('/')
 def index():
-    if current_user.is_authenticated:
+    if current_user.is_authenticated and session.get('counselor_access'):
         if current_user.is_counselor:
             return redirect(url_for('counselor_dashboard'))
         elif current_user.is_teacher:
             return redirect(url_for('teacher_dashboard'))
+    
+    if current_user.is_authenticated and not (current_user.is_counselor or current_user.is_teacher):
         # Student accounts are no longer supported; clear any stale session.
         logout_user()
-    if session.get('counselor_access'):
+        
+    if session.get('counselor_access') and not current_user.is_authenticated:
         return redirect(url_for('login'))
     counselors = User.query.filter_by(role='counselor', is_admin=False).all()
     return render_template('index.html', counselors=counselors)
@@ -426,10 +449,16 @@ def index():
 def toggle_counselor_access():
     session['counselor_access'] = not session.get('counselor_access', False)
     if session['counselor_access']:
-        flash('Counselor mode enabled — use Counselor Login above.', 'info')
+        if current_user.is_authenticated:
+            if current_user.is_counselor:
+                return redirect(url_for('counselor_dashboard'))
+            elif current_user.is_teacher:
+                return redirect(url_for('teacher_dashboard'))
+        return redirect(url_for('login'))
     else:
-        flash('Switched back to Student mode.', 'info')
-    return redirect(request.referrer or url_for('index'))
+        if current_user.is_authenticated:
+            logout_user()
+        return redirect(url_for('index'))
 
 
 @app.route('/counselor/create', methods=['POST'])
@@ -634,6 +663,10 @@ def teacher_refer():
 @app.route('/login', methods=['GET', 'POST'])
 def login():
     if current_user.is_authenticated:
+        if current_user.is_counselor:
+            return redirect(url_for('counselor_dashboard'))
+        elif current_user.is_teacher:
+            return redirect(url_for('teacher_dashboard'))
         return redirect(url_for('index'))
     if not session.get('counselor_access', False):
         return redirect(url_for('index'))
@@ -1036,6 +1069,16 @@ def book_appointment_public(counselor_id):
             errors.append('Last Name is required.')
         if not birthday_str:
             errors.append('Birthday is required.')
+        if not contact_phone:
+            errors.append('Phone number is required.')
+        if not year_level:
+            errors.append('Year Level is required.')
+        if not department:
+            errors.append('Department is required.')
+        if not section:
+            errors.append('Section is required.')
+        if not student_id_val:
+            errors.append('Student ID is required.')
         if not purpose:
             errors.append('Please describe your purpose for this appointment.')
 

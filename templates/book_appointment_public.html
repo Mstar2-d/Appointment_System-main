@@ -69,7 +69,15 @@
                                aria-label="{{ weekday_names[cell.weekday_idx] }}, {{ calendar.month_title.split()[0] }} {{ cell.day }}"
                                title="{{ weekday_names[cell.weekday_idx] }}, {{ calendar.month_title.split()[0] }} {{ cell.day }}{% if not cell.has_slots %} · No available slots{% endif %}">
                                 <span class="calendar-day-num">{{ cell.day }}</span>
-                                {% if cell.is_weekend %}<span class="calendar-day-tag">Weekend</span>{% elif not cell.has_slots %}<span class="calendar-day-tag">Full</span>{% endif %}
+                                {% if cell.is_weekend %}
+                                    <span class="calendar-day-tag">Weekend</span>
+                                {% elif not cell.has_slots %}
+                                    {% if cell.is_past_5pm %}
+                                        <span class="calendar-day-tag">Day ended</span>
+                                    {% else %}
+                                        <span class="calendar-day-tag">Full</span>
+                                    {% endif %}
+                                {% endif %}
                             </a>
                         {% else %}
                             <div role="gridcell"
@@ -85,7 +93,7 @@
 
             <div class="calendar-legend">
                 <span class="legend-item"><span class="legend-dot has-slots"></span>Available</span>
-                <span class="legend-item"><span class="legend-dot no-slots"></span>Fully booked</span>
+                <span class="legend-item"><span class="legend-dot no-slots"></span>Fully booked / Day ended</span>
                 <span class="legend-item"><span class="legend-dot weekend"></span>Weekend (closed)</span>
                 <span class="legend-item"><span class="legend-dot today"></span>Today</span>
             </div>
@@ -145,8 +153,8 @@
                 <input type="date" id="birthday" name="birthday" required max="{{ selected_date.strftime('%Y-%m-%d') }}">
             </div>
             <div class="form-group">
-                <label for="year_level">Year Level</label>
-                <select id="year_level" name="year_level">
+                <label for="year_level">Year Level <span style="color: var(--danger);">*</span></label>
+                <select id="year_level" name="year_level" required>
                     <option value="">— Select —</option>
                     <option value="1st yr">1st Year</option>
                     <option value="2nd yr">2nd Year</option>
@@ -155,8 +163,8 @@
                 </select>
             </div>
             <div class="form-group">
-                <label for="department">Department</label>
-                <select id="department" name="department">
+                <label for="department">Department <span style="color: var(--danger);">*</span></label>
+                <select id="department" name="department" required>
                     <option value="">— Select —</option>
                     <option value="College of Computing Studies">College of Computing Studies</option>
                     <option value="College of Education">College of Education</option>
@@ -164,20 +172,20 @@
                 </select>
             </div>
             <div class="form-group">
-                <label for="section">Section</label>
-                <input type="text" id="section" name="section" placeholder="e.g. Mahogany, A, BSCS-3B" maxlength="50">
+                <label for="section">Section <span style="color: var(--danger);">*</span></label>
+                <input type="text" id="section" name="section" required placeholder="e.g. Mahogany, A, BSCS-3B" maxlength="50">
             </div>
             <div class="form-group">
                 <label for="contact_email">Email <span style="color: var(--text-tertiary); font-size: 0.78rem; font-weight: 400;">(optional, for updates)</span></label>
                 <input type="email" id="contact_email" name="contact_email" placeholder="you@example.com" maxlength="120">
             </div>
             <div class="form-group">
-                <label for="contact_phone">Phone <span style="color: var(--text-tertiary); font-size: 0.78rem; font-weight: 400;">(optional, for updates)</span></label>
-                <input type="tel" id="contact_phone" name="contact_phone" placeholder="09XX XXX XXXX" maxlength="20">
+                <label for="contact_phone">Phone <span style="color: var(--danger);">*</span></label>
+                <input type="tel" id="contact_phone" name="contact_phone" required placeholder="09XX XXX XXXX" maxlength="20">
             </div>
             <div class="form-group">
-                <label for="student_id">Student ID</label>
-                <input type="text" id="student_id" name="student_id" placeholder="2025-0000" maxlength="20">
+                <label for="student_id">Student ID <span style="color: var(--danger);">*</span></label>
+                <input type="text" id="student_id" name="student_id" required placeholder="2025-0000" maxlength="20">
             </div>
         </div>
 
