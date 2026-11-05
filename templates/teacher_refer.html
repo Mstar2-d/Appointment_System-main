@@ -11,15 +11,21 @@
     <h3 style="margin-bottom: 1.5rem; font-size: 1.4rem;">Refer a Student</h3>
 
     <form method="POST" action="{{ url_for('teacher_refer') }}">
-        <div class="form-group">
-            <label for="counselor_id">Assign to Counselor</label>
-            <select id="counselor_id" name="counselor_id" required>
-                <option value="">— Select Counselor —</option>
-                {% for c in counselors %}
-                    <option value="{{ c.id }}">{{ c.full_name }} ({{ c.specialty if c.specialty else 'General' }})</option>
-                {% endfor %}
-            </select>
-        </div>
+        {% set default_counselor = None %}
+        {% for c in counselors %}
+            {% if c.full_name == 'Maryan David' %}
+                {% set default_counselor = c %}
+            {% endif %}
+        {% endfor %}
+        
+        {# If Maryan David isn't found, use the first counselor as a fallback #}
+        {% if not default_counselor and counselors %}
+            {% set default_counselor = counselors[0] %}
+        {% endif %}
+
+        {% if default_counselor %}
+            <input type="hidden" name="counselor_id" value="{{ default_counselor.id }}">
+        {% endif %}
 
         <div class="form-row">
             <div class="form-group">
