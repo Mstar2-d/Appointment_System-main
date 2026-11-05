@@ -587,6 +587,8 @@ def teacher_dashboard():
         abort(403)
     
     referrals = Appointment.query.filter_by(referred_by_id=current_user.id).order_by(Appointment.date.desc()).all()
+    # Hide referrals of students who have already graduated.
+    referrals = [r for r in referrals if not _record_expired(r)]
 
     return render_template('teacher_dashboard.html', referrals=referrals)
 
@@ -741,6 +743,28 @@ def logout():
     return redirect(url_for('index'))
 
 
+YEAR_LEVEL_NUMBERS = {'1st yr': 1, '2nd yr': 2, '3rd yr': 3, '4th yr': 4}
+
+
+def _record_expired(appt, today=None):
+    # Archive (hide from history) records once the student has graduated.
+    # A student in year N graduates after (4 - N) school years, counted from
+    # the appointment date. 4th years graduate at the end of their current
+    # school year, so they get a one-year grace period.
+    today = today or date.today()
+    if not appt.date or not appt.year_level:
+        return False
+    year_number = YEAR_LEVEL_NUMBERS.get(appt.year_level.strip().lower())
+    if not year_number:
+        return False
+    retention_years = max(4 - year_number, 0) or 1
+    try:
+        expiry = appt.date.replace(year=appt.date.year + retention_years)
+    except ValueError:  # Feb 29
+        expiry = appt.date.replace(year=appt.date.year + retention_years, day=28)
+    return today > expiry
+
+
 def upcoming_appointments_query(counselor_id):
     # Appointments that still need the counselor's attention: today/future
     # appointments that are not yet completed, plus unresolved teacher
@@ -828,6 +852,8 @@ def counselor_history():
         counselor_id=current_user.id
     ).order_by(Appointment.date.desc(), Appointment.start_time.desc()).all()
     past_appointments = [a for a in all_appointments if a.id not in upcoming_ids]
+    # Hide records of students who have already graduated.
+    past_appointments = [a for a in past_appointments if not _record_expired(a)]
 
     return render_template('counselor_history.html', appointments=past_appointments)
 
